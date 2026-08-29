@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Binary & Cache
+cloudflared.exe
+*.log
+
+# Large temp uploads/outputs
+uploads/2nd.mp4
+outputs/*.mp4
