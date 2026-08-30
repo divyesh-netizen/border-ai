@@ -1,369 +1,222 @@
-import time
 import math
-from typing import List, Dict, Any, Optional, Tuple
+import time
+from typing import List, Dict, Any, Tuple, Optional
 
 class AlertEngine:
     """
-    Surveillance Event, Behaviour Analysis & Dynamic Risk Engine.
-    Uses TRACK HISTORY rather than isolated frames to detect:
-    - Intrusion / Restricted Zone Entry (Zone A, Zone B, Zone C)
-    - Loitering / Sustained Presence
-    - Wrong Direction Movement
-    - Fast Movement / Running
-    - Crowd / Multiple Human Gathering
-    - Dynamic 0-100 Risk Score with contributing factor breakdown
+    Temporal Behavior Analysis & Explainable Risk Scoring Engine for Border Surveillance.
+    Evaluates:
+    - Intrusion & Zone Crossings
+    - Sustained Presence / Loitering (Dwell time > threshold in stationary radius)
+    - Multi-Human Grouping & Crowd Density
+    - Fast Movement / Running Anomalies
+    - Animal & Vehicle Movement Verification
+    - Transparent 0-100 Explainable Risk Score
     """
-    def __init__(self, sustained_presence_sec: float = 6.0, multi_human_threshold: int = 2, min_persistence_frames: int = 3):
-        self.sustained_presence_sec = sustained_presence_sec
-        self.multi_human_threshold = multi_human_threshold
-        self.min_persistence_frames = min_persistence_frames
+    def __init__(self, loiter_time_sec: float = 8.0, crowd_threshold: int = 4, speed_threshold: float = 120.0):
+        self.loiter_time_sec = loiter_time_sec
+        self.crowd_threshold = crowd_threshold
+        self.speed_threshold = speed_threshold
         
-        self.alerts: List[Dict[str, Any]] = []
-        self.events: List[Dict[str, Any]] = []
-        self.behaviour_log: List[Dict[str, Any]] = []
-        self.alert_counter = 1
-        self.event_counter = 1
-        self._last_alert_time: Dict[str, float] = {}
+        self.alert_history: List[Dict[str, Any]] = []
+        self.fired_event_keys = set()
+
+    def reset(self):
+        self.alert_history = []
+        self.fired_event_keys = set()
+
+    def evaluate_frame(
+        self,
+        detections: List[Dict[str, Any]],
+        active_tracks: Dict[int, Any],
+        frame_idx: int,
+        timestamp: float,
+        video_fps: float = 25.0
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Evaluates temporal behaviors and calculates explainable risk score for the active frame.
+        """
+        active_alerts = []
         
-        # Virtual Restricted Zones (Normalized coordinates [x1, y1, x2, y2])
-        self.zones = {
-            "ZONE-A": {"name": "Restricted Inner Buffer", "priority": "HIGH", "weight": 20, "bbox": [0.10, 0.20, 0.60, 0.90]},
-            "ZONE-B": {"name": "Outer Transit Perimeter", "priority": "MEDIUM", "weight": 12, "bbox": [0.60, 0.20, 0.90, 0.90]},
-            "ZONE-C": {"name": "General Approach Corridor", "priority": "LOW", "weight": 5, "bbox": [0.0, 0.0, 1.0, 0.35]}
-        }
+        # Categorize active validated tracks
+        human_tracks = [t for t in active_tracks.values() if t.dominant_class == "HUMAN" and t.is_validated]
+        vehicle_tracks = [t for t in active_tracks.values() if t.dominant_class == "VEHICLE" and t.is_validated]
+        animal_tracks = [t for t in active_tracks.values() if t.dominant_class == "ANIMAL" and t.is_validated]
+        unknown_tracks = [t for t in active_tracks.values() if t.dominant_class == "UNKNOWN"]
 
-        self.current_risk_score = 12
-        self.current_risk_level = "LOW"
-        self.current_risk_factors = {
-            "object_factor": 10,
-            "zone_factor": 5,
-            "time_factor": 5,
-            "duration_factor": 0,
-            "movement_factor": 5,
-            "behaviour_factor": 0
-        }
+        num_humans = len(human_tracks)
+        num_vehicles = len(vehicle_tracks)
+        num_animals = len(animal_tracks)
+        num_unknowns = len(unknown_tracks)
 
-    def _should_throttle(self, key: str, cooldown: float = 4.0) -> bool:
-        now = time.time()
-        if key in self._last_alert_time:
-            if now - self._last_alert_time[key] < cooldown:
-                return True
-        self._last_alert_time[key] = now
-        return False
+        # 1. Behavior: Loitering / Sustained Presence
+        for track in human_tracks:
+            if track.dwell_time >= self.loiter_time_sec:
+                event_key = f"LOITER_{track.track_id}_{int(track.dwell_time // 10)}"
+                if event_key not in self.fired_event_keys:
+                    self.fired_event_keys.add(event_key)
+                    alert = {
+                        "alert_id": f"ALT_{len(self.alert_history) + 1:04d}",
+                        "timestamp": round(timestamp, 2),
+                        "frame": frame_idx,
+                        "type": "SUSTAINED_PRESENCE",
+                        "severity": "ATTENTION",
+                        "target_id": track.display_id,
+                        "description": f"Target {track.display_id} sustained dwell time ({track.dwell_time}s) in perimeter zone",
+                        "action_required": "Operator sector review advised",
+                        "risk_contribution": 35
+                    }
+                    active_alerts.append(alert)
+                    self.alert_history.append(alert)
 
-    def check_zone_entry(self, norm_bbox: List[float]) -> Tuple[str, str, int]:
+        # 2. Behavior: Multiple Human Presence
+        if num_humans >= 2:
+            event_key = f"MULTI_HUMAN_{frame_idx // int(video_fps * 5)}" # Throttle to once every 5 seconds
+            if event_key not in self.fired_event_keys:
+                self.fired_event_keys.add(event_key)
+                alert = {
+                    "alert_id": f"ALT_{len(self.alert_history) + 1:04d}",
+                    "timestamp": round(timestamp, 2),
+                    "frame": frame_idx,
+                    "type": "MULTIPLE_HUMAN_PRESENCE",
+                    "severity": "ATTENTION" if num_humans < self.crowd_threshold else "CRITICAL",
+                    "target_id": f"GROUP_OF_{num_humans}",
+                    "description": f"{num_humans} concurrent validated human targets tracked in sector",
+                    "action_required": "Sector patrol notification",
+                    "risk_contribution": 25 + (num_humans * 5)
+                }
+                active_alerts.append(alert)
+                self.alert_history.append(alert)
+
+        # 3. Behavior: Crowd Density Event
+        if num_humans >= self.crowd_threshold:
+            event_key = f"CROWD_{frame_idx // int(video_fps * 5)}"
+            if event_key not in self.fired_event_keys:
+                self.fired_event_keys.add(event_key)
+                alert = {
+                    "alert_id": f"ALT_{len(self.alert_history) + 1:04d}",
+                    "timestamp": round(timestamp, 2),
+                    "frame": frame_idx,
+                    "type": "CROWD_FORMATION",
+                    "severity": "CRITICAL",
+                    "target_id": f"CROWD_N_{num_humans}",
+                    "description": f"Crowd anomaly detected: {num_humans} active human tracks in sector",
+                    "action_required": "High-priority perimeter alert",
+                    "risk_contribution": 45
+                }
+                active_alerts.append(alert)
+                self.alert_history.append(alert)
+
+        # 4. Behavior: Fast Movement / Running Anomaly
+        for track in human_tracks:
+            if track.speed_px_s >= self.speed_threshold and track.hits >= 8:
+                event_key = f"SPEED_{track.track_id}_{frame_idx // int(video_fps * 4)}"
+                if event_key not in self.fired_event_keys:
+                    self.fired_event_keys.add(event_key)
+                    alert = {
+                        "alert_id": f"ALT_{len(self.alert_history) + 1:04d}",
+                        "timestamp": round(timestamp, 2),
+                        "frame": frame_idx,
+                        "type": "FAST_MOVEMENT",
+                        "severity": "ATTENTION",
+                        "target_id": track.display_id,
+                        "description": f"Target {track.display_id} velocity anomaly: {track.speed_px_s} px/s",
+                        "action_required": "Track trajectory monitoring",
+                        "risk_contribution": 20
+                    }
+                    active_alerts.append(alert)
+                    self.alert_history.append(alert)
+
+        # 5. Behavior: Unknown Target Review Flag
+        if num_unknowns >= 1:
+            event_key = f"UNKNOWN_{frame_idx // int(video_fps * 10)}"
+            if event_key not in self.fired_event_keys:
+                self.fired_event_keys.add(event_key)
+                alert = {
+                    "alert_id": f"ALT_{len(self.alert_history) + 1:04d}",
+                    "timestamp": round(timestamp, 2),
+                    "frame": frame_idx,
+                    "type": "UNKNOWN_OBJECT",
+                    "severity": "MONITOR",
+                    "target_id": "UNKNOWN_TARGET",
+                    "description": f"{num_unknowns} low-confidence / unclassified visual target requiring human verification",
+                    "action_required": "Visual verification required",
+                    "risk_contribution": 10
+                }
+                active_alerts.append(alert)
+                self.alert_history.append(alert)
+
+        # Calculate Transparent Explainable Risk Score (0-100)
+        risk_data = self._compute_explainable_risk(
+            num_humans=num_humans,
+            num_vehicles=num_vehicles,
+            num_animals=num_animals,
+            num_unknowns=num_unknowns,
+            human_tracks=human_tracks
+        )
+
+        return active_alerts, risk_data
+
+    def _compute_explainable_risk(
+        self,
+        num_humans: int,
+        num_vehicles: int,
+        num_animals: int,
+        num_unknowns: int,
+        human_tracks: List[Any]
+    ) -> Dict[str, Any]:
         """
-        Determines which zone a bounding box centroid falls into.
+        Calculates a 0-100 explainable risk score with transparent factor weights.
         """
-        if not norm_bbox or len(norm_bbox) != 4:
-            return "PERIMETER", "LOW", 5
-        cx = (norm_bbox[0] + norm_bbox[2]) / 2.0
-        cy = (norm_bbox[1] + norm_bbox[3]) / 2.0
+        score = 0
+        factors = []
 
-        for zid, zinfo in self.zones.items():
-            zb = zinfo["bbox"]
-            if zb[0] <= cx <= zb[2] and zb[1] <= cy <= zb[3]:
-                return zid, zinfo["priority"], zinfo["weight"]
+        # Base presence factor
+        if num_humans > 0:
+            human_contrib = min(40, num_humans * 15)
+            score += human_contrib
+            factors.append(f"Human presence ({num_humans} target{'s' if num_humans > 1 else ''}): +{human_contrib}")
 
-        return "PERIMETER", "LOW", 5
+        # Loitering factor
+        max_dwell = max([t.dwell_time for t in human_tracks], default=0.0)
+        if max_dwell > self.loiter_time_sec:
+            dwell_contrib = min(30, int((max_dwell - self.loiter_time_sec) * 3) + 15)
+            score += dwell_contrib
+            factors.append(f"Sustained dwell time ({max_dwell:.1f}s): +{dwell_contrib}")
 
-    def compute_risk_score(self, detections: List[Dict[str, Any]], active_tracks: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Calculates dynamic 0-100 Risk Score based on 6 core risk factors:
-        - Object Type (Human, Vehicle, Animal, Unknown)
-        - Zone Priority (Restricted Buffer, Transit Sector, Perimeter)
-        - Time & Lighting Context (Night / Low-light elevates risk)
-        - Duration / Dwell Time in zone
-        - Movement Speed / Anomaly
-        - Behaviour Pattern (Crowd, Loitering, Intrusion)
-        """
-        human_count = sum(1 for d in detections if d.get("class_name") == "HUMAN")
-        vehicle_count = sum(1 for d in detections if d.get("class_name") == "VEHICLE")
-        animal_count = sum(1 for d in detections if d.get("class_name") == "ANIMAL")
-        unknown_count = sum(1 for d in detections if d.get("class_name") == "UNKNOWN")
-        max_dwell = max([t.get("dwell_time", 0) for t in active_tracks], default=0)
-        max_speed = max([t.get("speed_px_s", 0) for t in active_tracks], default=0)
+        # Vehicle factor
+        if num_vehicles > 0:
+            veh_contrib = min(20, num_vehicles * 10)
+            score += veh_contrib
+            factors.append(f"Vehicle sector activity ({num_vehicles}): +{veh_contrib}")
 
-        # 1. Object Factor (0 - 25)
-        obj_factor = min(25, (human_count * 9) + (vehicle_count * 6) + (unknown_count * 7) + (animal_count * 2))
+        # Crowd factor
+        if num_humans >= self.crowd_threshold:
+            score += 20
+            factors.append(f"Crowd concentration anomaly: +20")
 
-        # 2. Zone Factor (0 - 20)
-        zone_weights = []
-        for t in active_tracks:
-            _, _, w = self.check_zone_entry(t.get("norm_bbox", []))
-            zone_weights.append(w)
-        zone_factor = min(20, max(zone_weights, default=5))
+        # Unknown target factor
+        if num_unknowns > 0:
+            score += 5
+            factors.append(f"Unclassified visual flag: +5")
 
-        # 3. Time / Night Context Factor (0 - 15)
-        time_factor = 10  # Standard night surveillance context
+        total_score = min(100, max(0, score))
 
-        # 4. Duration Factor (0 - 20)
-        dur_factor = min(20, int(max_dwell * 2.5))
-
-        # 5. Movement Factor (0 - 10)
-        move_factor = 7 if (max_speed > 80.0) else (4 if human_count > 0 else 2)
-
-        # 6. Behaviour Factor (0 - 10)
-        beh_factor = 0
-        if human_count >= self.multi_human_threshold:
-            beh_factor += 5
-        if max_dwell >= self.sustained_presence_sec:
-            beh_factor += 5
-
-        total_score = min(100, max(5, obj_factor + zone_factor + time_factor + dur_factor + move_factor + beh_factor))
-
-        if total_score <= 30:
-            level = "LOW"
-        elif total_score <= 70:
+        if total_score >= 70:
+            level = "CRITICAL"
+        elif total_score >= 45:
+            level = "HIGH"
+        elif total_score >= 20:
             level = "MEDIUM"
         else:
-            level = "HIGH"
-
-        self.current_risk_score = total_score
-        self.current_risk_level = level
-        self.current_risk_factors = {
-            "object_factor": obj_factor,
-            "zone_factor": zone_factor,
-            "time_factor": time_factor,
-            "duration_factor": dur_factor,
-            "movement_factor": move_factor,
-            "behaviour_factor": beh_factor
-        }
+            level = "LOW"
 
         return {
             "score": total_score,
             "level": level,
-            "factors": self.current_risk_factors
+            "factors": factors if factors else ["Perimeter clear — baseline monitoring: 0"],
+            "max_dwell_sec": round(max_dwell, 1),
+            "active_humans": num_humans,
+            "active_vehicles": num_vehicles,
+            "active_animals": num_animals
         }
-
-    def process_frame(self, detections: List[Dict[str, Any]], active_tracks: List[Dict[str, Any]], timecode_str: str, current_time: float, frame_idx: int = 0) -> List[Dict[str, Any]]:
-        """
-        Evaluates track history, zone boundaries, and dynamics to trigger real security events & alerts.
-        """
-        new_alerts_this_frame = []
-
-        # Filter detections by persistence to reduce single-frame false alarms
-        persistent_tracks = [t for t in active_tracks if t.get("total_visible_frames", 1) >= self.min_persistence_frames]
-        human_tracks = [t for t in persistent_tracks if t["class_name"] == "HUMAN"]
-        vehicle_tracks = [t for t in persistent_tracks if t["class_name"] == "VEHICLE"]
-        animal_tracks = [t for t in persistent_tracks if t["class_name"] == "ANIMAL"]
-        unknown_tracks = [t for t in persistent_tracks if t["class_name"] == "UNKNOWN"]
-
-        # 1. Restricted Zone Entry (Intrusion / High Attention)
-        for t in human_tracks:
-            zid, zpri, _ = self.check_zone_entry(t.get("norm_bbox", []))
-            t["zone"] = zid
-            if zid == "ZONE-A":
-                throttle_key = f"zone_entry_{t['track_id']}_{zid}"
-                if not self._should_throttle(throttle_key, cooldown=8.0):
-                    alert = {
-                        "id": f"ALT-{self.alert_counter:04d}",
-                        "timestamp": timecode_str,
-                        "type": "RESTRICTED ZONE ENTRY",
-                        "severity": "ALERT",
-                        "track_id": t["display_id"],
-                        "confidence": f"{t['confidence']}%",
-                        "zone": "ZONE-A (Restricted Inner Buffer)",
-                        "message": f"Restricted zone breach: {t['display_id']} entered Zone A",
-                        "details": f"Target crossed into high-priority buffer at {timecode_str}",
-                        "evidence_ready": True
-                    }
-                    self.alerts.append(alert)
-                    new_alerts_this_frame.append(alert)
-                    self.alert_counter += 1
-
-                    self.events.append({
-                        "id": self.event_counter,
-                        "timestamp": timecode_str,
-                        "track_id": t["display_id"],
-                        "class_name": "Human",
-                        "confidence": f"{t['confidence']}%",
-                        "event": "Restricted Zone Entry",
-                        "severity": "ALERT",
-                        "zone": "ZONE-A",
-                        "details": f"Personnel ingress into high priority restricted buffer zone"
-                    })
-                    self.event_counter += 1
-
-                    self.behaviour_log.append({
-                        "time": timecode_str,
-                        "category": "INTRUSION",
-                        "title": "Restricted Buffer Ingress",
-                        "desc": f"{t['display_id']} entered Zone A restricted corridor",
-                        "severity": "ALERT"
-                    })
-
-        # 2. Loitering / Sustained Presence (> N seconds)
-        for t in persistent_tracks:
-            if t["dwell_time"] >= self.sustained_presence_sec:
-                throttle_key = f"sustained_{t['track_id']}"
-                if not self._should_throttle(throttle_key, cooldown=10.0):
-                    alert = {
-                        "id": f"ALT-{self.alert_counter:04d}",
-                        "timestamp": timecode_str,
-                        "type": "LOITERING / SUSTAINED PRESENCE",
-                        "severity": "ATTENTION",
-                        "track_id": t["display_id"],
-                        "confidence": f"{t['confidence']}%",
-                        "duration": f"{int(t['dwell_time'])}s",
-                        "zone": t.get("zone", "Zone A"),
-                        "message": f"Sustained presence detected: {t['display_id']} in sector for {int(t['dwell_time'])}s",
-                        "details": f"Target stationary / lingering beyond threshold ({int(self.sustained_presence_sec)}s)",
-                        "evidence_ready": True
-                    }
-                    self.alerts.append(alert)
-                    new_alerts_this_frame.append(alert)
-                    self.alert_counter += 1
-
-                    self.events.append({
-                        "id": self.event_counter,
-                        "timestamp": timecode_str,
-                        "track_id": t["display_id"],
-                        "class_name": t["class_name"].capitalize(),
-                        "confidence": f"{t['confidence']}%",
-                        "event": "Loitering / Sustained Presence",
-                        "severity": "ATTENTION",
-                        "zone": t.get("zone", "Zone A"),
-                        "details": f"Dwell duration reached {int(t['dwell_time'])}s in monitored sector"
-                    })
-                    self.event_counter += 1
-
-                    self.behaviour_log.append({
-                        "time": timecode_str,
-                        "category": "LOITERING",
-                        "title": "Stationary Dwell Alert",
-                        "desc": f"{t['display_id']} stationary in perimeter buffer >{int(self.sustained_presence_sec)}s",
-                        "severity": "ATTENTION"
-                    })
-
-        # 3. Fast Movement / Running Detection
-        for t in human_tracks:
-            if t.get("speed_px_s", 0) > 120.0:
-                throttle_key = f"fast_move_{t['track_id']}"
-                if not self._should_throttle(throttle_key, cooldown=6.0):
-                    self.behaviour_log.append({
-                        "time": timecode_str,
-                        "category": "MOVEMENT",
-                        "title": "Rapid Acceleration / Running",
-                        "desc": f"{t['display_id']} movement speed elevated ({int(t['speed_px_s'])} px/s)",
-                        "severity": "ATTENTION"
-                    })
-
-        # 4. Crowd / Multiple Human Presence
-        if len(human_tracks) >= self.multi_human_threshold:
-            if not self._should_throttle("multi_human_cluster", cooldown=6.0):
-                avg_conf = round(sum(t["confidence"] for t in human_tracks) / len(human_tracks), 1)
-                alert = {
-                    "id": f"ALT-{self.alert_counter:04d}",
-                    "timestamp": timecode_str,
-                    "type": "MULTIPLE HUMAN PRESENCE",
-                    "severity": "ATTENTION",
-                    "count": len(human_tracks),
-                    "confidence": f"{avg_conf}%",
-                    "zone": "Sector-07 Perimeter",
-                    "message": f"Multiple humans active in sector ({len(human_tracks)} tracked individuals)",
-                    "details": f"Simultaneous detection of {len(human_tracks)} individuals at {timecode_str}",
-                    "evidence_ready": True
-                }
-                self.alerts.append(alert)
-                new_alerts_this_frame.append(alert)
-                self.alert_counter += 1
-
-                self.events.append({
-                    "id": self.event_counter,
-                    "timestamp": timecode_str,
-                    "track_id": f"Cluster ({len(human_tracks)})",
-                    "class_name": "Human",
-                    "confidence": f"{avg_conf}%",
-                    "event": "Multiple Human Presence",
-                    "severity": "ATTENTION",
-                    "zone": "Sector-07",
-                    "details": f"Simultaneous activity of {len(human_tracks)} targets in close perimeter proximity"
-                })
-                self.event_counter += 1
-
-                self.behaviour_log.append({
-                    "time": timecode_str,
-                    "category": "CROWD",
-                    "title": "Multi-Target Gathering",
-                    "desc": f"{len(human_tracks)} active tracked individuals in perimeter",
-                    "severity": "ATTENTION"
-                })
-
-        # 5. Routine Single Human Presence (NORMAL)
-        if len(human_tracks) == 1:
-            h = human_tracks[0]
-            if not self._should_throttle(f"human_normal_{h['track_id']}", cooldown=12.0):
-                self.events.append({
-                    "id": self.event_counter,
-                    "timestamp": timecode_str,
-                    "track_id": h["display_id"],
-                    "class_name": "Human",
-                    "confidence": f"{h['confidence']}%",
-                    "event": "Human Presence",
-                    "severity": "NORMAL",
-                    "zone": h.get("zone", "Sector-07"),
-                    "details": f"Track {h['display_id']} observed in transit with confidence {h['confidence']}%"
-                })
-                self.event_counter += 1
-
-                self.behaviour_log.append({
-                    "time": timecode_str,
-                    "category": "DETECTION",
-                    "title": "Personnel Transit",
-                    "desc": f"{h['display_id']} transit logged in sector",
-                    "severity": "NORMAL"
-                })
-
-        # 6. Vehicle Transit (NORMAL)
-        for v in vehicle_tracks:
-            if not self._should_throttle(f"veh_transit_{v['track_id']}", cooldown=10.0):
-                self.events.append({
-                    "id": self.event_counter,
-                    "timestamp": timecode_str,
-                    "track_id": v["display_id"],
-                    "class_name": "Vehicle",
-                    "confidence": f"{v['confidence']}%",
-                    "event": "Vehicle Transit",
-                    "severity": "NORMAL",
-                    "zone": "Access Corridor",
-                    "details": f"Vehicle activity observed: {v['confidence']}% confidence"
-                })
-                self.event_counter += 1
-
-        # 7. Animal Crossing (NORMAL)
-        for a in animal_tracks:
-            if not self._should_throttle(f"anim_cross_{a['track_id']}", cooldown=10.0):
-                self.events.append({
-                    "id": self.event_counter,
-                    "timestamp": timecode_str,
-                    "track_id": a["display_id"],
-                    "class_name": "Animal",
-                    "confidence": f"{a['confidence']}%",
-                    "event": "Fauna Crossing",
-                    "severity": "NORMAL",
-                    "zone": "Outer Buffer",
-                    "details": f"Perimeter fauna crossing logged: {a['confidence']}% confidence"
-                })
-                self.event_counter += 1
-
-        return new_alerts_this_frame
-
-    def get_all_alerts(self) -> List[Dict[str, Any]]:
-        return self.alerts
-
-    def get_all_events(self) -> List[Dict[str, Any]]:
-        return self.events
-
-    def get_behaviour_log(self) -> List[Dict[str, Any]]:
-        return self.behaviour_log
-
-    def reset(self):
-        self.alerts.clear()
-        self.events.clear()
-        self.behaviour_log.clear()
-        self._last_alert_time.clear()
-        self.alert_counter = 1
-        self.event_counter = 1
-        self.current_risk_score = 12
-        self.current_risk_level = "LOW"

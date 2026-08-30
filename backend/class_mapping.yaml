@@ -1,0 +1,120 @@
+# BORDER AI — Canonical Surveillance Taxonomy & Dataset Class Mapping
+# Smart India Hackathon 2026
+
+canonical_classes:
+  - HUMAN
+  - VEHICLE
+  - ANIMAL
+  - UNKNOWN
+
+class_colors:
+  HUMAN: "#EF4444"    # Tactical Red
+  VEHICLE: "#3B82F6"  # Tactical Blue
+  ANIMAL: "#10B981"   # Tactical Green
+  UNKNOWN: "#F59E0B"  # Tactical Amber
+
+default_thresholds:
+  PERSON_THRESHOLD: 0.50
+  VEHICLE_THRESHOLD: 0.50
+  ANIMAL_THRESHOLD: 0.50
+  UNKNOWN_THRESHOLD: 0.35
+
+presets:
+  HIGH_PRECISION:
+    PERSON_THRESHOLD: 0.65
+    VEHICLE_THRESHOLD: 0.60
+    ANIMAL_THRESHOLD: 0.60
+    min_confirmation_frames: 8
+  BALANCED:
+    PERSON_THRESHOLD: 0.50
+    VEHICLE_THRESHOLD: 0.50
+    ANIMAL_THRESHOLD: 0.50
+    min_confirmation_frames: 5
+  HIGH_RECALL:
+    PERSON_THRESHOLD: 0.35
+    VEHICLE_THRESHOLD: 0.35
+    ANIMAL_THRESHOLD: 0.35
+    min_confirmation_frames: 3
+
+# Dataset-Specific Source Mapping
+dataset_mappings:
+  COCO_YOLO:
+    HUMAN:
+      - person
+      - pedestrian
+      - human
+      - patrol
+      - soldier
+    VEHICLE:
+      - car
+      - truck
+      - bus
+      - motorcycle
+      - motorbike
+      - bicycle
+      - train
+      - boat
+      - van
+      - vehicle
+    ANIMAL:
+      - bird
+      - cat
+      - dog
+      - horse
+      - sheep
+      - cow
+      - elephant
+      - bear
+      - zebra
+      - giraffe
+      - animal
+      - wildlife
+      - deer
+
+  LLVIP:
+    description: "Paired Visible and Infrared Low-Light Surveillance Benchmark"
+    modality: "Visible + Thermal LWIR"
+    class_map:
+      0: HUMAN # Person / Pedestrian
+
+  PBVS:
+    description: "IEEE Perception Beyond the Visible Spectrum Thermal Video Benchmark"
+    modality: "Thermal LWIR"
+    class_map:
+      0: HUMAN # Pedestrian
+      1: VEHICLE # Surveillance Vehicle
+
+  TarDAL:
+    description: "Thermal and Visible Infrared Target Detection & Image Fusion"
+    modality: "Visible + Infrared"
+    class_map:
+      0: HUMAN # Person
+      1: VEHICLE # Car / Truck / Van
+
+  UA_CMDet:
+    description: "Cross-Modality Drone & Ground Surveillance Dataset"
+    modality: "Visible + Infrared"
+    class_map:
+      0: HUMAN # Person
+      1: VEHICLE # Vehicle
+      2: ANIMAL # Large Fauna
+
+  Thermal_Human_1:
+    description: "Roboflow Thermal Human Surveillance Dataset 1"
+    modality: "Thermal LWIR"
+    class_map:
+      0: HUMAN # Person
+
+  Thermal_Human_2:
+    description: "Roboflow Thermal Human Surveillance Dataset 2"
+    modality: "Thermal LWIR"
+    class_map:
+      0: HUMAN # Person
+
+  VIRAT:
+    description: "Realistic Video Surveillance Activity and Perimeter Benchmark"
+    modality: "Visible CCTV"
+    class_map:
+      0: HUMAN # Person
+      1: VEHICLE # Car / Truck / Bike
+      2: UNKNOWN # Object / Cargo / Ambiguous
