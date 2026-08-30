@@ -299,8 +299,12 @@ class ModelAdapter:
                     raw_name = self.model.names[cls_id]
                     canonical_class, sub_type = self.map_class(raw_name)
 
+                    # Strict Human-Only Filtering
+                    if canonical_class != "HUMAN":
+                        continue
+
                     # Strict class-specific threshold filtering
-                    required_conf = self._get_threshold_for_class(canonical_class)
+                    required_conf = self._get_threshold_for_class("HUMAN")
                     if conf < required_conf:
                         continue
 
@@ -316,18 +320,18 @@ class ModelAdapter:
                         continue
 
                     # Reject wide horizontal artifacts for human detections (standing/moving humans are vertically aligned)
-                    if canonical_class == "HUMAN" and (bw > 2.0 * bh) and conf < 0.80:
+                    if (bw > 2.0 * bh) and conf < 0.80:
                         continue
 
                     norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round(bw / w, 4), round(bh / h, 4)]
                     all_raw_detections.append({
-                        "class": canonical_class,
-                        "sub_type": sub_type,
+                        "class": "HUMAN",
+                        "sub_type": "person",
                         "raw_class": raw_name,
                         "confidence": round(conf * 100, 1),
                         "bbox": [x1, y1, x2, y2],
                         "norm_bbox": norm_bbox,
-                        "color": CLASS_COLORS.get(canonical_class, CLASS_COLORS["UNKNOWN"]),
+                        "color": CLASS_COLORS["HUMAN"],
                         "source": "FULL_FRAME"
                     })
 
@@ -355,7 +359,10 @@ class ModelAdapter:
                             raw_name = self.model.names[cls_id]
                             canonical_class, sub_type = self.map_class(raw_name)
 
-                            required_conf = self._get_threshold_for_class(canonical_class)
+                            if canonical_class != "HUMAN":
+                                continue
+
+                            required_conf = self._get_threshold_for_class("HUMAN")
                             if conf < required_conf:
                                 continue
 
@@ -372,13 +379,13 @@ class ModelAdapter:
 
                             norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round(bw / w, 4), round(bh / h, 4)]
                             all_raw_detections.append({
-                                "class": canonical_class,
-                                "sub_type": sub_type,
+                                "class": "HUMAN",
+                                "sub_type": "person",
                                 "raw_class": raw_name,
                                 "confidence": round(conf * 100, 1),
                                 "bbox": [x1, y1, x2, y2],
                                 "norm_bbox": norm_bbox,
-                                "color": CLASS_COLORS.get(canonical_class, CLASS_COLORS["UNKNOWN"]),
+                                "color": CLASS_COLORS["HUMAN"],
                                 "source": "TILED_SLICE"
                             })
 

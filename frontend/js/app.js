@@ -516,7 +516,7 @@ function closeUniqueIdentitiesModal() {
   if (modal) modal.style.display = "none";
 }
 
-let isPersonOnlyMode = false;
+let isPersonOnlyMode = true;
 let isDebugBboxMode = false;
 let lastLiveDetections = [];
 
