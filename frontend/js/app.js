@@ -5,7 +5,7 @@
  */
 
 // Global State
-let currentMode = "REAL_TIME"; // 'REAL_TIME' (Fast Mode Default) or 'HIGH_ACCURACY'
+let currentMode = "REAL_TIME"; // 'REAL_TIME' or 'HIGH_ACCURACY'
 let currentVideoFilename = "whatsapp_surveillance.mp4";
 let currentJobId = null;
 let pollingInterval = null;
@@ -15,6 +15,55 @@ let allAlerts = [];
 let activeEventFilter = "ALL";
 let trainingPollInterval = null;
 let lastIdentities = [];
+
+// Application State Machine
+// States: IDLE | VIDEO_READY | ANALYZING | STOPPED | COMPLETE | ERROR
+let appState = "IDLE";
+
+function updateAppState(newState) {
+  appState = newState;
+  const btn = document.getElementById("btnRunAnalysis");
+  const btnText = document.getElementById("btnRunAnalysisText");
+  const statusBadge = document.getElementById("hudStatusBadge");
+
+  if (!btn || !btnText) return;
+
+  btn.classList.remove("running");
+  btn.disabled = false;
+
+  switch (newState) {
+    case "IDLE":
+      btnText.innerText = "START AI ANALYSIS";
+      btn.disabled = true;
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>SYSTEM READY — UPLOAD A VIDEO</span>`;
+      break;
+    case "VIDEO_READY":
+      btnText.innerText = "▶ ANALYZE VIDEO";
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>FOOTAGE LOADED — CLICK ANALYZE</span>`;
+      break;
+    case "ANALYZING":
+      btnText.innerText = "⏹ STOP ANALYSIS";
+      btn.classList.add("running");
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>AI DETECTION ACTIVE</span>`;
+      break;
+    case "STOPPED":
+      btnText.innerText = "↺ RESTART ANALYSIS";
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>ANALYSIS STOPPED</span>`;
+      break;
+    case "COMPLETE":
+      btnText.innerText = "↺ RESTART ANALYSIS";
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>ANALYSIS COMPLETE</span>`;
+      break;
+    case "ERROR":
+      btnText.innerText = "↺ RETRY ANALYSIS";
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>ERROR — RETRY ANALYSIS</span>`;
+      break;
+    case "UPLOADING":
+      btnText.innerText = "UPLOADING...";
+      btn.disabled = true;
+      break;
+  }
+}
 
 // DOM Elements
 const mainVideo = document.getElementById("mainVideo");
@@ -27,7 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
   checkServerHealth();
   fetchModelStatus();
   fetchDegradedBenchmark();
-  loadSampleVideo("user");
+  loadSampleVideo("user");  // Loads preview only — does NOT start analysis
+  updateAppState("VIDEO_READY");
 });
 
 // ----------------- TAB SWITCHING -----------------
@@ -90,7 +140,8 @@ function resetTelemetryCounters() {
 }
 
 function loadSampleVideo(type) {
-  stopAnalysis();
+  // Stop any running analysis first
+  _stopAnalysisInternal();
   currentJobId = null;
   lastLiveDetections = [];
   if (hudCtx && hudCanvas) {
@@ -121,22 +172,24 @@ function loadSampleVideo(type) {
     hudCamTag.innerText = type === "thermal" ? "CAM-03 / SECTOR-08 (THERMAL LWIR)" : "CAM-01 / SECTOR-07 (ALPHA)";
   }
 
-  // Auto-start instant analysis
-  startAnalysis();
+  // VIDEO_READY — no auto-start. User must click ANALYZE.
+  updateAppState("VIDEO_READY");
 }
 
 async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  stopAnalysis();
+  _stopAnalysisInternal();
   currentJobId = null;
   lastLiveDetections = [];
   if (hudCtx && hudCanvas) {
     hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
   }
   resetTelemetryCounters();
+  updateAppState("UPLOADING");
 
+  // Show local preview immediately
   if (mainVideo) {
     mainVideo.src = URL.createObjectURL(file);
     mainVideo.load();
@@ -147,9 +200,6 @@ async function handleFileUpload(event) {
   formData.append("file", file);
 
   try {
-    const btnText = document.getElementById("btnRunAnalysisText");
-    if (btnText) btnText.innerText = "UPLOADING...";
-
     const res = await fetch("/api/upload-video", {
       method: "POST",
       body: formData
@@ -157,12 +207,16 @@ async function handleFileUpload(event) {
     const data = await res.json();
     if (res.ok) {
       currentVideoFilename = data.filename;
-      console.log("[Upload] Video uploaded successfully:", data.filename);
-      // Auto-start instant analysis immediately for uploaded video
-      startAnalysis();
+      console.log("[Upload] Video uploaded:", data.filename);
+      // VIDEO_READY — no auto-start. User must click ANALYZE VIDEO.
+      updateAppState("VIDEO_READY");
+    } else {
+      console.error("[Upload] Server error:", data);
+      updateAppState("ERROR");
     }
   } catch (err) {
-    console.error("Upload error:", err);
+    console.error("[Upload] Network error:", err);
+    updateAppState("ERROR");
   }
 }
 
@@ -192,22 +246,32 @@ async function fetchModelStatus() {
 }
 
 // ----------------- AI ANALYSIS CONTROLS & HUD RENDER -----------------
+
 async function toggleAnalysis() {
-  if (isAnalysisRunning) {
-    stopAnalysis();
-  } else {
-    startAnalysis();
+  if (appState === "ANALYZING") {
+    await stopAnalysisClean();
+  } else if (appState === "STOPPED" || appState === "COMPLETE" || appState === "ERROR") {
+    await restartAnalysis();
+  } else if (appState === "VIDEO_READY") {
+    await startAnalysis();
   }
+  // IDLE / UPLOADING: button is disabled, nothing to do
 }
 
 async function startAnalysis() {
-  const btn = document.getElementById("btnRunAnalysis");
-  const btnText = document.getElementById("btnRunAnalysisText");
-  const progWrapper = document.getElementById("videoProgressWrapper");
+  if (!currentVideoFilename) {
+    console.warn("[Analysis] No video filename set.");
+    return;
+  }
 
-  if (btn) btn.classList.add("running");
-  if (btnText) btnText.innerText = "STARTING PIPELINE...";
+  const progWrapper = document.getElementById("videoProgressWrapper");
   if (progWrapper) progWrapper.style.display = "block";
+
+  updateAppState("ANALYZING");
+
+  // Get current confidence threshold from dropdown
+  const confSelect = document.getElementById("selectConfThreshold");
+  const confThreshold = confSelect ? parseFloat(confSelect.value) : 0.40;
 
   try {
     const formData = new FormData();
@@ -215,6 +279,7 @@ async function startAnalysis() {
     formData.append("is_thermal", currentVideoFilename.includes("thermal"));
     formData.append("mode", currentMode);
     formData.append("is_person_only", isPersonOnlyMode);
+    formData.append("conf_threshold", confThreshold);
 
     const res = await fetch("/api/analyze-video", {
       method: "POST",
@@ -225,30 +290,69 @@ async function startAnalysis() {
     if (res.ok) {
       currentJobId = data.job_id;
       isAnalysisRunning = true;
-      if (btnText) btnText.innerText = "STOP ANALYSIS";
-      
       if (mainVideo) {
         mainVideo.currentTime = 0;
         mainVideo.play().catch(() => {});
       }
-
       startStatusPolling();
+    } else {
+      console.error("[Analysis] Server error:", data);
+      updateAppState("ERROR");
     }
   } catch (err) {
-    console.error("Failed to start analysis:", err);
-    if (btn) btn.classList.remove("running");
-    if (btnText) btnText.innerText = "START AI ANALYSIS";
+    console.error("[Analysis] Failed to start:", err);
+    updateAppState("ERROR");
   }
 }
 
-function stopAnalysis() {
+/** Internal: stop frontend polling + WebSocket only (no backend call) */
+function _stopAnalysisInternal() {
   isAnalysisRunning = false;
   clearInterval(pollingInterval);
   pollingInterval = null;
-  const btn = document.getElementById("btnRunAnalysis");
-  const btnText = document.getElementById("btnRunAnalysisText");
-  if (btn) btn.classList.remove("running");
-  if (btnText) btnText.innerText = "START AI ANALYSIS";
+  if (detectionWs) {
+    detectionWs.close();
+    detectionWs = null;
+  }
+}
+
+/** Clean stop: stops frontend AND signals backend to stop the worker. */
+async function stopAnalysisClean() {
+  _stopAnalysisInternal();
+  updateAppState("STOPPED");
+
+  if (currentJobId) {
+    try {
+      await fetch(`/api/stop-analysis/${currentJobId}`, { method: "POST" });
+    } catch (err) {
+      console.warn("[Stop] Backend stop request failed:", err);
+    }
+  }
+}
+
+/** Alias for backwards compatibility with any inline onclick=stopAnalysis() calls. */
+function stopAnalysis() {
+  stopAnalysisClean();
+}
+
+/** Restart: reset counters, clear overlay, start fresh from frame 1. */
+async function restartAnalysis() {
+  const prevJobId = currentJobId;
+  _stopAnalysisInternal();
+  currentJobId = null;
+  lastLiveDetections = [];
+  if (hudCtx && hudCanvas) {
+    hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+  }
+  resetTelemetryCounters();
+
+  // Signal backend to stop previous job
+  if (prevJobId) {
+    try { await fetch(`/api/stop-analysis/${prevJobId}`, { method: "POST" }); } catch (_) {}
+  }
+
+  updateAppState("VIDEO_READY");
+  await startAnalysis();
 }
 
 let detectionWs = null;
@@ -272,12 +376,23 @@ function handleStreamTelemetry(data) {
       detectionWs = null;
     }
     isAnalysisRunning = false;
-    const btn = document.getElementById("btnRunAnalysis");
-    const btnText = document.getElementById("btnRunAnalysisText");
-    if (btn) btn.classList.remove("running");
-    if (btnText) btnText.innerText = "ANALYSIS COMPLETE";
-
+    updateAppState("COMPLETE");
     fetchUniqueIdentities();
+  } else if (data.status === "STOPPED") {
+    clearInterval(pollingInterval);
+    if (detectionWs) {
+      detectionWs.close();
+      detectionWs = null;
+    }
+    isAnalysisRunning = false;
+    if (appState === "ANALYZING") {
+      updateAppState("STOPPED");
+    }
+  } else if (data.status === "ERROR") {
+    clearInterval(pollingInterval);
+    if (detectionWs) { detectionWs.close(); detectionWs = null; }
+    isAnalysisRunning = false;
+    updateAppState("ERROR");
   }
 }
 
@@ -516,7 +631,7 @@ function closeUniqueIdentitiesModal() {
   if (modal) modal.style.display = "none";
 }
 
-let isPersonOnlyMode = true;
+let isPersonOnlyMode = false;
 let isDebugBboxMode = false;
 let lastLiveDetections = [];
 
@@ -725,6 +840,19 @@ async function applyPreset(presetName) {
     formData.append("preset", presetName);
     await fetch("/api/model-config", { method: "POST", body: formData });
     console.log(`[Preset] Applied preset: ${presetName}`);
+  } catch (err) {}
+}
+
+async function updateConfidenceThreshold(value) {
+  const conf = parseFloat(value);
+  if (isNaN(conf)) return;
+  try {
+    const formData = new FormData();
+    formData.append("person_thresh", conf);
+    formData.append("vehicle_thresh", conf);
+    formData.append("animal_thresh", conf);
+    await fetch("/api/model-config", { method: "POST", body: formData });
+    console.log(`[Threshold] Updated confidence to ${conf}`);
   } catch (err) {}
 }
 

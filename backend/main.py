@@ -39,7 +39,7 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 # Initialize Core Services
 model_adapter = ModelAdapter(
     model_path=os.path.join(MODELS_DIR, "best.pt") if os.path.exists(os.path.join(MODELS_DIR, "best.pt")) else "yolov8n.pt",
-    conf_threshold=0.50,
+    conf_threshold=0.40,
     iou_threshold=0.45,
     inference_mode="BALANCED"
 )
@@ -154,12 +154,21 @@ async def analyze_video(
     video_filename: str = Form(...),
     is_thermal: bool = Form(False),
     mode: Optional[str] = Form("REAL_TIME"),
-    is_person_only: bool = Form(False)
+    is_person_only: bool = Form(False),
+    conf_threshold: Optional[float] = Form(None)
 ):
     video_path = os.path.join(UPLOAD_DIR, video_filename)
     if not os.path.exists(video_path):
         raise HTTPException(status_code=404, detail=f"Video file '{video_filename}' not found in uploads.")
-    
+
+    # Apply confidence threshold if provided
+    if conf_threshold is not None:
+        ct = max(0.10, min(0.95, float(conf_threshold)))
+        model_adapter.thresholds["PERSON_THRESHOLD"] = ct
+        model_adapter.thresholds["VEHICLE_THRESHOLD"] = ct
+        model_adapter.thresholds["ANIMAL_THRESHOLD"] = ct
+        model_adapter.conf_threshold = ct
+
     job_id = video_processor.start_processing(
         video_path=video_path,
         is_thermal=is_thermal,
@@ -173,6 +182,45 @@ async def analyze_video(
         "mode": mode,
         "is_person_only": is_person_only,
         "message": "Computer vision video analytics pipeline initiated"
+    }
+
+
+@app.post("/api/stop-analysis/{job_id}")
+async def stop_analysis(job_id: str):
+    """Signal the backend processing thread to stop cleanly."""
+    stopped = video_processor.stop_job(job_id)
+    if not stopped:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found or already stopped.")
+    return {"job_id": job_id, "status": "STOPPED", "message": "Analysis stopped successfully."}
+
+
+@app.post("/api/restart-analysis")
+async def restart_analysis(
+    video_filename: str = Form(...),
+    is_thermal: bool = Form(False),
+    mode: Optional[str] = Form("REAL_TIME"),
+    is_person_only: bool = Form(False),
+    previous_job_id: Optional[str] = Form(None)
+):
+    """Stop any previous job and start a fresh analysis from the beginning."""
+    if previous_job_id:
+        video_processor.stop_job(previous_job_id)
+
+    video_path = os.path.join(UPLOAD_DIR, video_filename)
+    if not os.path.exists(video_path):
+        raise HTTPException(status_code=404, detail=f"Video file '{video_filename}' not found in uploads.")
+
+    job_id = video_processor.start_processing(
+        video_path=video_path,
+        is_thermal=is_thermal,
+        mode_override=mode,
+        is_person_only=is_person_only
+    )
+    return {
+        "job_id": job_id,
+        "status": "PROCESSING",
+        "video_filename": video_filename,
+        "message": "Analysis restarted from beginning."
     }
 
 @app.get("/api/analysis-status/{job_id}")
