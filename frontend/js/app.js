@@ -411,31 +411,91 @@ function closeUniqueIdentitiesModal() {
   if (modal) modal.style.display = "none";
 }
 
+let isPersonOnlyMode = false;
+let isDebugBboxMode = false;
+let lastLiveDetections = [];
+
+function togglePersonOnlyMode() {
+  isPersonOnlyMode = !isPersonOnlyMode;
+  const btn = document.getElementById("btnPersonOnlyToggle");
+  if (btn) btn.classList.toggle("active", isPersonOnlyMode);
+  if (lastLiveDetections) {
+    drawBoundingBoxes(lastLiveDetections);
+    renderLiveDetectionsList(lastLiveDetections);
+  }
+}
+
+function toggleDebugBboxMode() {
+  isDebugBboxMode = !isDebugBboxMode;
+  const btn = document.getElementById("btnDebugBboxToggle");
+  if (btn) btn.classList.toggle("active", isDebugBboxMode);
+  if (lastLiveDetections) {
+    drawBoundingBoxes(lastLiveDetections);
+  }
+}
+
+function getVideoRenderRect() {
+  if (!mainVideo || !hudCanvas) return { offsetX: 0, offsetY: 0, renderW: hudCanvas.width, renderH: hudCanvas.height };
+  const cw = hudCanvas.width;
+  const ch = hudCanvas.height;
+  const vw = mainVideo.videoWidth || 1920;
+  const vh = mainVideo.videoHeight || 1080;
+  
+  if (vw === 0 || vh === 0 || cw === 0 || ch === 0) {
+    return { offsetX: 0, offsetY: 0, renderW: cw, renderH: ch };
+  }
+
+  const videoRatio = vw / vh;
+  const canvasRatio = cw / ch;
+
+  let renderW = cw;
+  let renderH = ch;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (canvasRatio > videoRatio) {
+    // Letterbox on left/right
+    renderW = ch * videoRatio;
+    offsetX = (cw - renderW) / 2;
+  } else {
+    // Letterbox on top/bottom
+    renderH = cw / videoRatio;
+    offsetY = (ch - renderH) / 2;
+  }
+
+  return { offsetX, offsetY, renderW, renderH };
+}
+
 // ----------------- CANVAS HUD DRAWING -----------------
 function drawBoundingBoxes(detections) {
   if (!hudCtx || !hudCanvas) return;
+  lastLiveDetections = detections;
   const cw = hudCanvas.width;
   const ch = hudCanvas.height;
   hudCtx.clearRect(0, 0, cw, ch);
 
-  detections.forEach(d => {
+  const rect = getVideoRenderRect();
+  const filtered = isPersonOnlyMode ? detections.filter(d => d.class === "HUMAN") : detections;
+
+  filtered.forEach(d => {
     const nb = d.norm_bbox;
     if (!nb) return;
 
-    const x = nb[0] * cw;
-    const y = nb[1] * ch;
-    const w = nb[2] * cw;
-    const h = nb[3] * ch;
-    const color = d.color || "#EF4444";
+    // Pixel-perfect aspect-ratio compensated coordinates
+    const x = rect.offsetX + (nb[0] * rect.renderW);
+    const y = rect.offsetY + (nb[1] * rect.renderH);
+    const w = nb[2] * rect.renderW;
+    const h = nb[3] * rect.renderH;
+    const color = d.color || (d.class === 'HUMAN' ? '#EF4444' : d.class === 'VEHICLE' ? '#3B82F6' : '#10B981');
 
-    // Thin tactical box
+    // 1. Crisp Tight Bounding Box (1.5px border, no artificial padding)
     hudCtx.strokeStyle = color;
-    hudCtx.lineWidth = 2;
+    hudCtx.lineWidth = 1.5;
     hudCtx.strokeRect(x, y, w, h);
 
-    // Corner Accents
-    const cLen = Math.min(10, w / 4);
-    hudCtx.lineWidth = 3;
+    // 2. Subtle Tactical Corner Accents
+    const cLen = Math.min(8, Math.max(4, w / 5));
+    hudCtx.lineWidth = 2.5;
     hudCtx.beginPath();
     hudCtx.moveTo(x, y + cLen); hudCtx.lineTo(x, y); hudCtx.lineTo(x + cLen, y);
     hudCtx.moveTo(x + w - cLen, y); hudCtx.lineTo(x + w, y); hudCtx.lineTo(x + w, y + cLen);
@@ -443,19 +503,28 @@ function drawBoundingBoxes(detections) {
     hudCtx.moveTo(x + w - cLen, y + h); hudCtx.lineTo(x + w, y + h); hudCtx.lineTo(x + w, y + h - cLen);
     hudCtx.stroke();
 
-    // Clean Tactical Label Tag
-    const tagText = `${d.display_id || d.class} | ${d.confidence}%`;
-    hudCtx.font = "bold 10px 'IBM Plex Mono', monospace";
-    const textW = hudCtx.measureText(tagText).width;
+    // 3. Compact Label (e.g. H-001 94%)
+    const displayLabel = `${d.display_id || d.class} ${d.confidence}%`;
+    hudCtx.font = "bold 9px 'IBM Plex Mono', monospace";
+    const textW = hudCtx.measureText(displayLabel).width;
+    const tagH = 13;
 
-    hudCtx.fillStyle = "rgba(10, 14, 23, 0.85)";
-    hudCtx.fillRect(x, Math.max(0, y - 16), textW + 8, 16);
+    hudCtx.fillStyle = "rgba(6, 9, 17, 0.90)";
+    hudCtx.fillRect(x, Math.max(0, y - tagH), textW + 6, tagH);
     hudCtx.strokeStyle = color;
     hudCtx.lineWidth = 1;
-    hudCtx.strokeRect(x, Math.max(0, y - 16), textW + 8, 16);
+    hudCtx.strokeRect(x, Math.max(0, y - tagH), textW + 6, tagH);
 
     hudCtx.fillStyle = color;
-    hudCtx.fillText(tagText, x + 4, Math.max(12, y - 4));
+    hudCtx.fillText(displayLabel, x + 3, Math.max(9, y - 3));
+
+    // 4. Optional Debug Coordinate Box Overlay
+    if (isDebugBboxMode && d.bbox) {
+      const debugStr = `[${Math.round(d.bbox[0])},${Math.round(d.bbox[1])},${Math.round(d.bbox[2]-d.bbox[0])}x${Math.round(d.bbox[3]-d.bbox[1])}]`;
+      hudCtx.font = "8px 'IBM Plex Mono', monospace";
+      hudCtx.fillStyle = "rgba(0, 255, 204, 0.85)";
+      hudCtx.fillText(debugStr, x, y + h + 10);
+    }
   });
 }
 
@@ -464,14 +533,16 @@ function renderLiveDetectionsList(detections) {
   const badge = document.getElementById("liveDetectionsCountBadge");
   if (!list) return;
 
-  if (badge) badge.innerText = `${detections.length} DETECTIONS`;
+  const filtered = isPersonOnlyMode ? detections.filter(d => d.class === "HUMAN") : detections;
 
-  if (detections.length === 0) {
-    list.innerHTML = `<div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">Perimeter Clear</div>`;
+  if (badge) badge.innerText = `${filtered.length} DETECTIONS`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">Perimeter Clear ${isPersonOnlyMode ? '(Person Filter Active)' : ''}</div>`;
     return;
   }
 
-  list.innerHTML = detections.map(d => `
+  list.innerHTML = filtered.map(d => `
     <div class="detection-item" style="border-left-color: ${d.color || '#EF4444'};">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <span class="detection-class-tag tag-${d.class.toLowerCase()}">${d.class}</span>

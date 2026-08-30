@@ -22,6 +22,10 @@ def calculate_bbox_iou(b1: List[float], b2: List[float]) -> float:
     a2 = max(1.0, (b2[2] - b2[0]) * (b2[3] - b2[1]))
     return inter / float(a1 + a2 - inter)
 
+def make_compact_id(cls_name: str, track_id: int) -> str:
+    prefix = "H" if cls_name == "HUMAN" else ("V" if cls_name == "VEHICLE" else ("A" if cls_name == "ANIMAL" else "U"))
+    return f"{prefix}-{track_id:03d}"
+
 class TrackIdentity:
     """
     Validated Persistent Track Identity for Video Analytics.
@@ -31,7 +35,7 @@ class TrackIdentity:
     def __init__(self, track_id: int, class_name: str, bbox: List[int], norm_bbox: List[float], conf: float, frame_idx: int, timestamp: float, raw_frame: Optional[np.ndarray] = None, thumbnail_dir: Optional[str] = None):
         self.track_id = track_id
         self.class_name = class_name
-        self.display_id = f"{class_name}_TRACK_{track_id:04d}"
+        self.display_id = make_compact_id(class_name, track_id)
         
         self.first_frame = frame_idx
         self.last_frame = frame_idx

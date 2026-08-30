@@ -266,10 +266,16 @@ class ModelAdapter:
                     x2 = max(0, min(w, int(xyxy[2])))
                     y2 = max(0, min(h, int(xyxy[3])))
 
-                    if (x2 - x1) < 6 or (y2 - y1) < 6:
+                    bw = x2 - x1
+                    bh = y2 - y1
+                    if bw < 8 or bh < 12:
                         continue
 
-                    norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round((x2 - x1) / w, 4), round((y2 - y1) / h, 4)]
+                    # Reject wide horizontal artifacts for human detections (standing/moving humans are vertically aligned)
+                    if canonical_class == "HUMAN" and (bw > 2.0 * bh) and conf < 0.80:
+                        continue
+
+                    norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round(bw / w, 4), round(bh / h, 4)]
                     all_raw_detections.append({
                         "class": canonical_class,
                         "sub_type": sub_type,

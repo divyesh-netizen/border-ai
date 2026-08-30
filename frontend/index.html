@@ -197,10 +197,15 @@
             <select id="selectConfThreshold" onchange="updateConfidenceThreshold(this.value)" style="background: var(--bg-card); border: 1px solid var(--border-mid); color: #fff; font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 4px; border-radius: 2px;">
               <option value="0.40">0.40 (High Recall)</option>
               <option value="0.50" selected>0.50 (Default Balanced)</option>
+              <option value="0.55">0.55 (Standard Person)</option>
               <option value="0.60">0.60 (High Precision)</option>
               <option value="0.70">0.70 (Strict)</option>
             </select>
           </div>
+
+          <!-- Person Only Mode & Debug BBox Toggles -->
+          <button id="btnPersonOnlyToggle" class="btn-source" onclick="togglePersonOnlyMode()" title="Show only verified human detections, hide vehicles/animals">🧍 Person Only</button>
+          <button id="btnDebugBboxToggle" class="btn-source" onclick="toggleDebugBboxMode()" title="Show tight bounding box coordinates [x1, y1, x2, y2]">🐞 Debug BBox</button>
         </div>
 
         <div class="workstation-actions" style="display: flex; gap: 0.5rem; align-items: center;">
