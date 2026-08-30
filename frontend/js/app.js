@@ -97,11 +97,23 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const formData = new FormData();
-  formData.append("file", file);
+  // Immediate local preview so video plays instantly
+  if (mainVideo) {
+    try {
+      const localUrl = URL.createObjectURL(file);
+      mainVideo.src = localUrl;
+      mainVideo.load();
+      mainVideo.play().catch(() => {});
+    } catch (e) {
+      console.warn("Local preview error:", e);
+    }
+  }
 
   const statusBadge = document.getElementById("hudStatusBadge");
-  if (statusBadge) statusBadge.innerText = "UPLOADING FOOTAGE...";
+  if (statusBadge) statusBadge.innerText = "UPLOADING TO AI SERVER...";
+
+  const formData = new FormData();
+  formData.append("file", file);
 
   try {
     const res = await fetch("/api/upload-video", {
@@ -111,17 +123,36 @@ async function handleFileUpload(event) {
     const data = await res.json();
     if (res.ok) {
       currentVideoFilename = data.filename;
-      if (mainVideo) {
-        mainVideo.src = data.video_url;
-        mainVideo.load();
-        mainVideo.play().catch(() => {});
-      }
-      if (statusBadge) statusBadge.innerText = "FOOTAGE LOADED";
+      if (statusBadge) statusBadge.innerText = "FOOTAGE LOADED & READY";
+      console.log("Video uploaded successfully:", data);
     } else {
-      alert("Upload failed: " + data.detail);
+      if (statusBadge) statusBadge.innerText = "UPLOAD FAILED (USE DEMO/LOCAL)";
+      alert("Upload failed: " + (data.detail || "Server error"));
     }
   } catch (err) {
     console.error("Upload error:", err);
+    if (statusBadge) statusBadge.innerText = "OFFLINE PREVIEW (LOCAL)";
+    // Don't block the user, local video is already playing
+  }
+}
+
+// Check server connectivity on startup (Handles Render Free Cold-Start)
+async function checkServerHealth() {
+  const headerStatus = document.getElementById("systemStatusHeader");
+  if (!headerStatus) return;
+
+  try {
+    const res = await fetch("/api/health");
+    if (res.ok) {
+      const data = await res.json();
+      headerStatus.innerText = `SYSTEM ONLINE (${data.device || 'AI'})`;
+      headerStatus.parentElement?.classList.remove("status-connecting");
+    } else {
+      headerStatus.innerText = "CONNECTING...";
+    }
+  } catch (err) {
+    headerStatus.innerText = "CONNECTING (COLD START)...";
+    setTimeout(checkServerHealth, 5000);
   }
 }
 
@@ -1029,6 +1060,7 @@ function renderDatasetCards(datasets) {
 // ----------------- INIT -----------------
 window.addEventListener("DOMContentLoaded", () => {
   initCanvas();
+  checkServerHealth();
   fetchInitialData();
   renderEventsTable();
   renderEvidenceGallery();

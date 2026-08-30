@@ -90,19 +90,22 @@ async def update_model_config(
 
 @app.post("/api/upload-video")
 async def upload_video(file: UploadFile = File(...)):
-    filename = file.filename
-    ext = os.path.splitext(filename)[1].lower()
+    raw_name = os.path.basename(file.filename) if file.filename else "video.mp4"
+    # Clean filename of unsafe characters
+    safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in raw_name)
+    ext = os.path.splitext(safe_name)[1].lower()
     if ext not in [".mp4", ".avi", ".mov", ".webm", ".mkv"]:
         raise HTTPException(status_code=400, detail="Unsupported video format. Allowed: MP4, AVI, MOV, WEBM, MKV.")
     
-    dest_path = os.path.join(UPLOAD_DIR, filename)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    dest_path = os.path.join(UPLOAD_DIR, safe_name)
     with open(dest_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
     return {
         "message": "Video uploaded successfully",
-        "filename": filename,
-        "video_url": f"/uploads/{filename}",
+        "filename": safe_name,
+        "video_url": f"/uploads/{safe_name}",
         "file_size": os.path.getsize(dest_path)
     }
 
