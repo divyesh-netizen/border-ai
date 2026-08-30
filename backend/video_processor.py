@@ -189,12 +189,19 @@ class VideoProcessor:
                 detections = [d for d in detections if d["class"] == "HUMAN"]
 
             # 4. Update Multi-Object Tracker (Kalman Filter + Temporal Validation + Thumbnails)
-            tracked_dets = tracker.update(
-                detections=detections,
-                frame_idx=frame_idx,
-                timestamp=timestamp,
-                raw_frame=frame
-            )
+            try:
+                tracked_dets = tracker.update(
+                    detections=detections,
+                    frame_idx=frame_idx,
+                    timestamp=timestamp,
+                    raw_frame=frame
+                )
+            except Exception as e:
+                print(f"[VideoProcessor] Tracker exception ({e}), falling back to raw detections...")
+                tracked_dets = detections
+                for i, d in enumerate(tracked_dets):
+                    d["track_id"] = i + 1
+                    d["display_id"] = f"H-{i+1:03d}" if d.get("class") == "HUMAN" else f"U-{i+1:03d}"
 
             # 4. Temporal Behavior Analysis & Explainable Risk Scoring
             alerts, risk = alert_engine.evaluate_frame(

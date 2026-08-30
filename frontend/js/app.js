@@ -251,41 +251,87 @@ function stopAnalysis() {
   if (btnText) btnText.innerText = "START AI ANALYSIS";
 }
 
-function startStatusPolling() {
-  clearInterval(pollingInterval);
+let detectionWs = null;
+
+function handleStreamTelemetry(data) {
+  if (!data) return;
+  updateTelemetryDisplay(data);
+
+  // Update Progress Bar
+  const progFrame = document.getElementById("progFrameText");
+  const progPct = document.getElementById("progPctText");
+  const progFill = document.getElementById("progBarFill");
+  if (progFrame) progFrame.innerText = `Processing Frame: ${data.current_frame} / ${data.total_frames} (${data.fps} FPS)`;
+  if (progPct) progPct.innerText = `${data.progress_percent}%`;
+  if (progFill) progFill.style.width = `${data.progress_percent}%`;
+
+  if (data.status === "COMPLETED") {
+    clearInterval(pollingInterval);
+    if (detectionWs) {
+      detectionWs.close();
+      detectionWs = null;
+    }
+    isAnalysisRunning = false;
+    const btn = document.getElementById("btnRunAnalysis");
+    const btnText = document.getElementById("btnRunAnalysisText");
+    if (btn) btn.classList.remove("running");
+    if (btnText) btnText.innerText = "ANALYSIS COMPLETE";
+
+    fetchUniqueIdentities();
+  }
+}
+
+function startHttpPollingFallback() {
+  if (pollingInterval) return;
   pollingInterval = setInterval(async () => {
-    if (!currentJobId) return;
+    if (!currentJobId || !isAnalysisRunning) return;
 
     try {
       const res = await fetch(`/api/analysis-status/${currentJobId}`);
       const data = await res.json();
-
       if (res.ok) {
-        updateTelemetryDisplay(data);
-
-        // Update Progress Bar
-        const progFrame = document.getElementById("progFrameText");
-        const progPct = document.getElementById("progPctText");
-        const progFill = document.getElementById("progBarFill");
-        if (progFrame) progFrame.innerText = `Processing Frame: ${data.current_frame} / ${data.total_frames} (${data.fps} FPS)`;
-        if (progPct) progPct.innerText = `${data.progress_percent}%`;
-        if (progFill) progFill.style.width = `${data.progress_percent}%`;
-
-        if (data.status === "COMPLETED") {
-          clearInterval(pollingInterval);
-          isAnalysisRunning = false;
-          const btn = document.getElementById("btnRunAnalysis");
-          const btnText = document.getElementById("btnRunAnalysisText");
-          if (btn) btn.classList.remove("running");
-          if (btnText) btnText.innerText = "ANALYSIS COMPLETE";
-
-          fetchUniqueIdentities();
-        }
+        handleStreamTelemetry(data);
       }
     } catch (err) {
       console.error("Polling error:", err);
     }
   }, 80);
+}
+
+function startStatusPolling() {
+  clearInterval(pollingInterval);
+  pollingInterval = null;
+  
+  if (detectionWs) {
+    detectionWs.close();
+    detectionWs = null;
+  }
+
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${protocol}//${window.location.host}/ws/detection/${currentJobId}`;
+  
+  try {
+    detectionWs = new WebSocket(wsUrl);
+    detectionWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleStreamTelemetry(data);
+      } catch (e) {}
+    };
+    detectionWs.onerror = () => {
+      startHttpPollingFallback();
+    };
+    detectionWs.onclose = () => {
+      if (isAnalysisRunning) {
+        startHttpPollingFallback();
+      }
+    };
+  } catch (err) {
+    startHttpPollingFallback();
+  }
+  
+  // Also start polling as safety net
+  startHttpPollingFallback();
 }
 
 function updateTelemetryDisplay(data) {

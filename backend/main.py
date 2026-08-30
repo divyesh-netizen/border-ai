@@ -8,7 +8,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Response
+import asyncio
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
@@ -228,6 +229,70 @@ async def get_analysis_status(job_id: str):
         "events_count": len(job.events_list),
         "error": job.error_message
     }
+
+@app.websocket("/ws/detection/{job_id}")
+async def websocket_detection_stream(websocket: WebSocket, job_id: str):
+    await websocket.accept()
+    try:
+        last_frame = -1
+        while True:
+            job = video_processor.get_job(job_id)
+            if not job:
+                await websocket.send_json({"status": "NOT_FOUND"})
+                break
+            
+            if job.current_frame != last_frame:
+                last_frame = job.current_frame
+                payload = {
+                    "job_id": job.job_id,
+                    "status": job.status,
+                    "progress_percent": job.progress_percent,
+                    "current_frame": job.current_frame,
+                    "total_frames": job.total_frames,
+                    "fps": job.fps,
+                    "measured_fps": job.measured_fps or job.fps,
+                    "latency_ms": job.latency_ms,
+                    "duration_sec": job.duration_sec,
+                    "live_detections": job.live_detections,
+                    "quality_report": job.quality_report,
+                    "stats": {
+                        "total_raw_detections": job.total_detections_count,
+                        "current_visible": {
+                            "humans": job.visible_humans,
+                            "vehicles": job.visible_vehicles,
+                            "animals": job.visible_animals,
+                            "unknown": job.visible_unknown
+                        },
+                        "active_tracks": {
+                            "humans": job.active_humans,
+                            "vehicles": job.active_vehicles,
+                            "animals": job.active_animals,
+                            "unknown": job.active_unknown,
+                            "total": job.active_tracks_count
+                        },
+                        "unique_validated": {
+                            "humans": job.unique_humans,
+                            "vehicles": job.unique_vehicles,
+                            "animals": job.unique_animals,
+                            "unknown": job.unique_unknown,
+                            "total": job.total_unique_objects
+                        }
+                    },
+                    "risk_data": job.risk_data,
+                    "alerts_count": job.alerts_count,
+                    "events_count": len(job.events_list),
+                    "error": job.error_message
+                }
+                await websocket.send_json(payload)
+            
+            if job.status in ["COMPLETED", "ERROR"]:
+                break
+            
+            await asyncio.sleep(0.04) # 25 FPS stream
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
 
 @app.get("/api/unique-identities/{job_id}")
 async def get_unique_identities(job_id: str):
