@@ -11,7 +11,20 @@ venv/
 # Binary & Cache
 cloudflared.exe
 *.log
+*.pt
 
-# Large temp uploads/outputs
-uploads/2nd.mp4
-outputs/*.mp4
+# Uploads and processed outputs
+uploads/*
+!uploads/sample_cctv_night.mp4
+!uploads/sample_thermal_night.mp4
+!uploads/whatsapp_surveillance.mp4
+outputs/annotated/*
+outputs/evidence/*
+
+# Temp inspection scripts
+backend/inspect_*.py
+backend/scan_*.py
+backend/test_2nd_video.py
+backend/test_all_videos_detection.py
+backend/test_user_video_audit.py
+backend/test_user_video_bytetrack.py

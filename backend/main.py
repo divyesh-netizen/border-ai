@@ -2,7 +2,7 @@ import os
 import sys
 import shutil
 import json
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -16,12 +16,12 @@ from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from inference import ModelAdapter
 from video_processor import VideoProcessor
 from alert_engine import AlertEngine
+from trainer import ModelTrainer
 import dataset_manager
 from synthetic_samples import generate_sample_surveillance_videos
 from report_generator import generate_csv_report, generate_json_report
 
-# Paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Directories
 PROJECT_DIR = os.path.dirname(BASE_DIR)
 UPLOAD_DIR = os.path.join(PROJECT_DIR, "uploads")
 OUTPUT_DIR = os.path.join(PROJECT_DIR, "outputs")
@@ -32,21 +32,22 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# Initialize ModelAdapter & VideoProcessor
+# Initialize ModelAdapter, VideoProcessor & ModelTrainer
 model_adapter = ModelAdapter(
     model_path=os.path.join(MODELS_DIR, "best.pt") if os.path.exists(os.path.join(MODELS_DIR, "best.pt")) else "yolov8n.pt",
     conf_threshold=0.35,
     iou_threshold=0.45
 )
-video_processor = VideoProcessor(model_adapter=model_adapter)
+video_processor = VideoProcessor(model_adapter=model_adapter, output_dir=OUTPUT_DIR)
+model_trainer = ModelTrainer(models_dir=MODELS_DIR)
 
-# Ensure sample videos exist for immediate one-click testing
+# Generate sample surveillance test videos if needed
 sample_vis, sample_therm = generate_sample_surveillance_videos(UPLOAD_DIR)
 
 app = FastAPI(
-    title="BORDER AI — Video Analytics for Border Surveillance",
-    description="Smart India Hackathon 2026: Intelligent CCTV Video Monitoring System",
-    version="1.0.0"
+    title="BORDER AI — Intelligent Video Analytics for Border Surveillance",
+    description="Smart India Hackathon 2026: AI-Powered Multi-Object Tracking & Perimeter Intelligence Core",
+    version="2.0.0"
 )
 
 app.add_middleware(
@@ -65,7 +66,8 @@ async def health_check():
         "status": "ONLINE",
         "system": "BORDER AI Surveillance Core",
         "sih_year": "2026",
-        "model_status": model_adapter.get_model_info()["status"]
+        "model_status": model_adapter.get_model_info()["status"],
+        "device": model_adapter.device.upper()
     }
 
 @app.get("/api/model-status")
@@ -76,10 +78,11 @@ async def get_model_status():
 async def update_model_config(
     conf: Optional[float] = Form(None),
     iou: Optional[float] = Form(None),
+    preset: Optional[str] = Form(None),
     weights_name: Optional[str] = Form(None)
 ):
     weights_path = os.path.join(MODELS_DIR, weights_name) if weights_name else None
-    model_adapter.update_config(conf=conf, iou=iou, weights_path=weights_path)
+    model_adapter.update_config(conf=conf, iou=iou, weights_path=weights_path, preset=preset)
     return {
         "message": "Configuration updated successfully",
         "info": model_adapter.get_model_info()
@@ -109,7 +112,7 @@ async def get_sample_videos():
         "user_video": {
             "name": "whatsapp_surveillance.mp4",
             "url": "/uploads/whatsapp_surveillance.mp4",
-            "description": "User Border Surveillance Video (Multi-Scale Detections)"
+            "description": "User Border Surveillance Footage (Multi-Entity Perimeter)"
         },
         "visible_cctv": {
             "name": "sample_cctv_night.mp4",
@@ -127,7 +130,7 @@ async def get_sample_videos():
 async def analyze_video(
     video_filename: str = Form(...),
     is_thermal: bool = Form(False),
-    mode: Optional[str] = Form("REAL") # REAL or DEMO
+    mode: Optional[str] = Form("REAL")  # REAL or DEMO
 ):
     video_path = os.path.join(UPLOAD_DIR, video_filename)
     if not os.path.exists(video_path):
@@ -139,7 +142,7 @@ async def analyze_video(
         "status": "PROCESSING",
         "video_filename": video_filename,
         "mode": mode,
-        "message": "Background AI video analysis started"
+        "message": "AI video analysis and multi-object tracking started"
     }
 
 @app.get("/api/analysis-status/{job_id}")
@@ -158,16 +161,42 @@ async def get_analysis_status(job_id: str):
         "duration_sec": job.duration_sec,
         "live_detections": job.live_detections,
         "active_tracks_count": job.active_tracks_count,
+        "annotated_video_url": job.annotated_video_url,
+        "evidence_snapshots": job.evidence_snapshots,
+        "visible_counts": {
+            "humans": job.visible_humans,
+            "vehicles": job.visible_vehicles,
+            "animals": job.visible_animals,
+            "unknown": job.visible_unknown
+        },
+        "unique_counts": {
+            "unique_humans": job.unique_humans,
+            "unique_vehicles": job.unique_vehicles,
+            "unique_animals": job.unique_animals,
+            "unique_unknown": job.unique_unknown,
+            "total_unique": job.total_unique_objects
+        },
+        "risk": job.risk_data,
+        "alerts_list": job.alerts_list,
+        "events_list": job.events_list,
+        "behaviour_log": job.behaviour_log,
         "stats": {
             "total_detections": job.total_detections_count,
-            "humans": job.human_count,
-            "animals": job.animal_count,
-            "vehicles": job.vehicle_count,
-            "unknown": job.unknown_count,
             "active_tracks": job.active_tracks_count,
+            "unique_humans": job.unique_humans,
+            "unique_vehicles": job.unique_vehicles,
+            "unique_animals": job.unique_animals,
+            "unique_unknown": job.unique_unknown,
+            "humans": job.unique_humans,
+            "vehicles": job.unique_vehicles,
+            "animals": job.unique_animals,
+            "unknown": job.unique_unknown,
+            "total_unique": job.total_unique_objects,
             "alerts": job.alerts_count,
             "events": job.events_count
         },
+        "track_audit_records": job.track_audit_records,
+        "unique_person_cards": job.unique_person_cards,
         "error": job.error_message
     }
 
@@ -178,7 +207,185 @@ async def get_detections_history(job_id: str):
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
     return {
         "job_id": job_id,
-        "history": job.frame_data_history
+        "history": job.frame_data_history,
+        "annotated_video_url": job.annotated_video_url,
+        "evidence_snapshots": job.evidence_snapshots,
+        "track_audit_records": job.track_audit_records,
+        "unique_person_cards": job.unique_person_cards,
+        "alerts_list": job.alerts_list,
+        "events_list": job.events_list,
+        "behaviour_log": job.behaviour_log,
+        "risk": job.risk_data
+    }
+
+@app.get("/api/annotated-video/{job_id}")
+async def get_annotated_video(job_id: str):
+    job = video_processor.get_job(job_id)
+    if not job or not job.annotated_video_path or not os.path.exists(job.annotated_video_path):
+        raise HTTPException(status_code=404, detail="Annotated video not found or analysis pending.")
+    return FileResponse(job.annotated_video_path, media_type="video/mp4", filename=f"annotated_{job_id}.mp4")
+
+# Training APIs
+@app.post("/api/train-model")
+async def train_model(
+    epochs: int = Form(30),
+    batch_size: int = Form(16),
+    learning_rate: float = Form(0.001)
+):
+    started = model_trainer.start_training(epochs=epochs, batch_size=batch_size, lr=learning_rate)
+    if not started:
+        raise HTTPException(status_code=400, detail="A training run is already in progress.")
+    return {
+        "message": "Model training initiated successfully.",
+        "status": "TRAINING",
+        "epochs": epochs
+    }
+
+@app.get("/api/training-status")
+async def get_training_status():
+    return model_trainer.get_status()
+
+# Surveillance Operations Endpoints
+@app.get("/api/cameras")
+async def get_cameras():
+    return {
+        "cameras": [
+            {
+                "id": "CAM-01",
+                "name": "Perimeter North Gate",
+                "sector": "Sector-07 (Alpha)",
+                "status": "ONLINE",
+                "modality": "Visible CCTV (HD)",
+                "fps": 25.0,
+                "resolution": "1920x1080",
+                "health": "Optimal",
+                "blur": False,
+                "obstruction": False,
+                "detections": 3,
+                "active_tracks": 2,
+                "last_event": "Personnel Transit (00:01:14)",
+                "risk_score": 28,
+                "sample_url": "/uploads/whatsapp_surveillance.mp4"
+            },
+            {
+                "id": "CAM-02",
+                "name": "Perimeter Fence West",
+                "sector": "Sector-07 (Bravo)",
+                "status": "ONLINE",
+                "modality": "Visible Low-Light CCTV",
+                "fps": 24.5,
+                "resolution": "1920x1080",
+                "health": "Optimal",
+                "blur": False,
+                "obstruction": False,
+                "detections": 5,
+                "active_tracks": 3,
+                "last_event": "Sustained Presence (00:03:12)",
+                "risk_score": 67,
+                "sample_url": "/uploads/sample_cctv_night.mp4"
+            },
+            {
+                "id": "CAM-03",
+                "name": "East Ridge Ridge-line",
+                "sector": "Sector-08 (Charlie)",
+                "status": "ONLINE",
+                "modality": "Thermal Long-Wave IR (LWIR)",
+                "fps": 30.0,
+                "resolution": "1280x720",
+                "health": "Optimal (Thermal Signature)",
+                "blur": False,
+                "obstruction": False,
+                "detections": 4,
+                "active_tracks": 2,
+                "last_event": "Perimeter Fauna Crossing (00:01:45)",
+                "risk_score": 35,
+                "sample_url": "/uploads/sample_thermal_night.mp4"
+            },
+            {
+                "id": "CAM-04",
+                "name": "Riverine Marshland Outpost",
+                "sector": "Sector-09 (Delta)",
+                "status": "ONLINE",
+                "modality": "Dual Visible/Thermal PTZ",
+                "fps": 25.0,
+                "resolution": "1920x1080",
+                "health": "Optimal",
+                "blur": False,
+                "obstruction": False,
+                "detections": 0,
+                "active_tracks": 0,
+                "last_event": "Clear (00:05:00)",
+                "risk_score": 10,
+                "sample_url": "/uploads/sample_cctv_night.mp4"
+            }
+        ]
+    }
+
+@app.get("/api/zones")
+async def get_zones():
+    return {
+        "zones": [
+            {
+                "id": "ZONE-A",
+                "name": "Restricted Inner Buffer",
+                "sector": "Sector-07",
+                "priority": "HIGH",
+                "color": "#EF4444",
+                "active_rules": ["Intrusion Detection", "Loitering > 6s", "Multi-person Detection"],
+                "status": "ACTIVE_MONITORING"
+            },
+            {
+                "id": "ZONE-B",
+                "name": "Outer Transit Perimeter",
+                "sector": "Sector-07",
+                "priority": "MEDIUM",
+                "color": "#F59E0B",
+                "active_rules": ["Direction Verification", "Vehicle Transit Log"],
+                "status": "ACTIVE_MONITORING"
+            },
+            {
+                "id": "ZONE-C",
+                "name": "General Approach Corridor",
+                "sector": "Sector-07",
+                "priority": "LOW",
+                "color": "#3B82F6",
+                "active_rules": ["Fauna Counting", "Standard Object Classification"],
+                "status": "ACTIVE_MONITORING"
+            }
+        ]
+    }
+
+@app.get("/api/analytics-summary")
+async def get_analytics_summary():
+    return {
+        "total_monitoring_hours": 142.5,
+        "total_detections_logged": 1284,
+        "unique_humans_tracked": 142,
+        "unique_vehicles_tracked": 78,
+        "unique_animals_tracked": 64,
+        "active_tracks": 4,
+        "avg_dwell_time_sec": 14.8,
+        "alerts_generated": 19,
+        "class_breakdown": {
+            "Human": 642,
+            "Vehicle": 318,
+            "Animal": 280,
+            "Unknown": 44
+        },
+        "severity_breakdown": {
+            "Normal": 1180,
+            "Monitor": 65,
+            "Attention": 32,
+            "Alert": 7
+        },
+        "hourly_activity": [
+            {"hour": "00:00", "count": 12}, {"hour": "02:00", "count": 8},
+            {"hour": "04:00", "count": 15}, {"hour": "06:00", "count": 42},
+            {"hour": "08:00", "count": 98}, {"hour": "10:00", "count": 145},
+            {"hour": "12:00", "count": 120}, {"hour": "14:00", "count": 110},
+            {"hour": "16:00", "count": 165}, {"hour": "18:00", "count": 210},
+            {"hour": "20:00", "count": 180}, {"hour": "22:00", "count": 79}
+        ]
     }
 
 @app.get("/api/report/{job_id}")
@@ -191,42 +398,26 @@ async def get_report(job_id: str, format: str = "json"):
         "duration_sec": job.duration_sec,
         "frames_processed": job.current_frame,
         "total_detections": job.total_detections_count,
-        "human_detections": job.human_count,
-        "vehicle_detections": job.vehicle_count,
-        "animal_detections": job.animal_count,
-        "unknown_detections": job.unknown_count,
+        "unique_humans": job.unique_humans,
+        "unique_vehicles": job.unique_vehicles,
+        "unique_animals": job.unique_animals,
+        "unique_unknown": job.unique_unknown,
+        "total_unique_objects": job.total_unique_objects,
         "active_tracks_count": job.active_tracks_count,
         "alerts_count": job.alerts_count,
         "events_count": job.events_count,
-        "processing_fps": job.fps
+        "processing_fps": job.fps,
+        "risk_summary": job.risk_data
     }
 
-    # Gather synthetic sample events or actual job events
-    # We construct the report
-    from alert_engine import AlertEngine
-    dummy_engine = AlertEngine()
-    
-    # Extract events from history
-    events = []
-    for s in job.frame_data_history:
-        for d in s.get("detections", []):
-            if d.get("class_name") == "HUMAN":
-                events.append({
-                    "timestamp": s["timecode"],
-                    "track_id": d.get("display_id", "Person"),
-                    "class_name": "Human",
-                    "confidence": f"{d['confidence']}%",
-                    "event": "Pedestrian Monitored",
-                    "severity": "INFO",
-                    "details": "Routine border sector transit"
-                })
-                break
+    events = job.events_list if job.events_list else []
+    alerts = job.alerts_list if job.alerts_list else []
     
     if format.lower() == "csv":
         csv_data = generate_csv_report(job_id, summary, events)
         return Response(content=csv_data, media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=border_ai_report_{job_id}.csv"})
     else:
-        json_report = generate_json_report(job_id, summary, events, [])
+        json_report = generate_json_report(job_id, summary, events, alerts)
         return JSONResponse(content=json_report)
 
 # Dataset & Benchmark APIs
@@ -246,42 +437,9 @@ async def get_data_qc():
 async def get_model_evaluation():
     return dataset_manager.get_model_evaluation()
 
-@app.get("/api/thermal-comparison-data")
-async def get_thermal_comparison_data():
-    """
-    Returns aligned low-light comparison data based on LLVIP benchmark.
-    Shows the dramatic detection improvement of Thermal LWIR vs Visible CCTV in total darkness.
-    """
-    return {
-        "benchmark": "LLVIP Low-Light Paired Dataset",
-        "description": "Aligned pedestrian detection comparison under 0.05 Lux night illumination",
-        "metrics": {
-            "visible_cctv": {
-                "detections_count": 2,
-                "missed_detections": 3,
-                "avg_confidence": "54.2%",
-                "false_negative_rate": "60%",
-                "status": "Degraded in Low Light"
-            },
-            "thermal_infrared": {
-                "detections_count": 5,
-                "missed_detections": 0,
-                "avg_confidence": "94.8%",
-                "false_negative_rate": "0%",
-                "status": "Optimal Heat Signature"
-            },
-            "fused_multimodal": {
-                "detections_count": 5,
-                "missed_detections": 0,
-                "avg_confidence": "96.4%",
-                "false_negative_rate": "0%",
-                "status": "Maximum Detail + Heat Signature"
-            }
-        }
-    }
-
-# Mount static file directories for uploads and frontend
+# Static Mounts
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 if os.path.exists(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 

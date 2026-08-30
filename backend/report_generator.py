@@ -15,12 +15,17 @@ def generate_csv_report(job_id: str, job_summary: Dict[str, Any], events: List[D
     writer.writerow(["Job ID", job_id])
     writer.writerow(["Video Duration", f"{job_summary.get('duration_sec', 0)}s"])
     writer.writerow(["Frames Processed", job_summary.get('frames_processed', 0)])
-    writer.writerow(["Total Detections", job_summary.get('total_detections', 0)])
-    writer.writerow(["Human Detections", job_summary.get('human_detections', 0)])
-    writer.writerow(["Vehicle Detections", job_summary.get('vehicle_detections', 0)])
-    writer.writerow(["Animal Detections", job_summary.get('animal_detections', 0)])
-    writer.writerow(["Unknown Detections", job_summary.get('unknown_detections', 0)])
-    writer.writerow(["Total Alerts", job_summary.get('alerts_count', 0)])
+    writer.writerow(["Processing Speed", f"{job_summary.get('processing_fps', 0)} FPS"])
+    writer.writerow([])
+    writer.writerow(["--- ENTITY & TRACKING SUMMARY ---"])
+    writer.writerow(["Total Detections Logged (Frame Sum)", job_summary.get('total_detections', 0)])
+    writer.writerow(["Total Unique Humans Tracked", job_summary.get('unique_humans', 0)])
+    writer.writerow(["Total Unique Vehicles Tracked", job_summary.get('unique_vehicles', 0)])
+    writer.writerow(["Total Unique Animals Tracked", job_summary.get('unique_animals', 0)])
+    writer.writerow(["Total Unique Objects Tracked", job_summary.get('total_unique_objects', 0)])
+    writer.writerow(["Final Active Tracks", job_summary.get('active_tracks_count', 0)])
+    writer.writerow(["Total Alerts Generated", job_summary.get('alerts_count', 0)])
+    writer.writerow(["Total Events Logged", job_summary.get('events_count', 0)])
     writer.writerow([])
     
     # Event Log Table
@@ -50,8 +55,8 @@ def generate_json_report(job_id: str, job_summary: Dict[str, Any], events: List[
         "alerts": alerts,
         "events": events,
         "model_metadata": {
-            "taxonomy": ["HUMAN", "ANIMAL", "VEHICLE", "UNKNOWN"],
+            "taxonomy": ["HUMAN", "VEHICLE", "ANIMAL", "UNKNOWN"],
             "verification_status": "Active Inference Verified",
-            "benchmark_reference": "LLVIP Low-Light Surveillance Benchmark"
+            "benchmark_reference": "LLVIP + PBVS + VIRAT Surveillance Benchmarks"
         }
     }

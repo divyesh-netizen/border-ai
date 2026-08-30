@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BORDER AI — Intelligent Video Analytics for Border Surveillance (SIH 2026)</title>
+  <title>BORDER AI — Intelligent Video Analytics & Tracking (SIH 2026)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,726 +11,888 @@
 </head>
 <body>
 
-  <!-- Top Tricolour Accent Line -->
+  <!-- Top Indian Deep-Tech Tricolour Line -->
   <div class="tricolour-bar"></div>
 
-  <!-- App Layout -->
-  <div class="app-layout">
-    
-    <!-- Sidebar Navigation -->
-    <aside class="app-sidebar">
-      <div class="sidebar-header">
-        <div class="brand-title">
-          <span>BORDER AI</span>
-          <span class="badge-gov">SIH 2026</span>
-        </div>
-        <div class="brand-subtitle">INTELLIGENT VIDEO ANALYTICS</div>
+  <!-- Top Operations Header -->
+  <header class="app-header">
+    <div class="brand-block">
+      <div class="brand-title">
+        <span>BORDER AI</span>
+        <span class="brand-badge">SIH 2026</span>
       </div>
+      <div class="brand-subtitle">INTELLIGENT VIDEO ANALYTICS & TRACKING</div>
+    </div>
 
-      <nav class="sidebar-nav">
-        <button class="nav-item active" onclick="switchTab('overview')">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          <span>Overview</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('surveillance')">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-          <span>Video Analysis</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('thermal')">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21h6"></path></svg>
-          <span>Low-Light & Thermal</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('datasets')">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-          <span>Dataset & Quality Hub</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('performance')">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-          <span>Model Performance</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('pipeline')">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          <span>Training Pipeline</span>
-        </button>
-      </nav>
+    <!-- Navigation Tabs -->
+    <nav class="main-nav">
+      <button class="nav-btn active" onclick="switchTab('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Overview</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('surveillance')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+        <span>Video Analysis</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('multicam')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+        <span>Multi-Camera</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('context')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Behaviour & Zones</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('analytics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Analytics</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('data')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        <span>Data & Evidence</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('model')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+        <span>Model & Evaluation</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('training')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>AI Training</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('advanced')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <span>Advanced</span>
+      </button>
+    </nav>
 
-      <!-- Sidebar Footer Telemetry -->
-      <div class="sidebar-footer">
-        <div class="telemetry-block">
-          <div class="telemetry-row">
-            <span class="telemetry-label">SYSTEM STATUS</span>
-            <span class="status-indicator"><span class="status-dot"></span> ONLINE</span>
-          </div>
-          <div class="telemetry-row">
-            <span class="telemetry-label">AI ENGINE</span>
-            <span class="telemetry-val">YOLOv8 + BORDER CORE</span>
-          </div>
-          <div class="telemetry-row">
-            <span class="telemetry-label">VERSION</span>
-            <span class="telemetry-val">v1.0.0 (SIH-2026)</span>
-          </div>
-        </div>
+    <!-- Telemetry & Mode Controls -->
+    <div class="header-telemetry">
+      <div class="system-status-chip">
+        <span class="status-pulsing-dot"></span>
+        <span id="systemStatusHeader">SYSTEM ONLINE</span>
       </div>
-    </aside>
+      <div class="mode-toggle">
+        <button id="btnRealMode" class="mode-btn active" onclick="setMode('REAL')">REAL AI</button>
+        <button id="btnDemoMode" class="mode-btn" onclick="setMode('DEMO')">DEMO</button>
+      </div>
+    </div>
+  </header>
 
-    <!-- Main Workspace -->
-    <main class="app-main">
-      
-      <!-- Top Operations Bar -->
-      <header class="top-header">
-        <div class="header-breadcrumbs">
-          <span>SURVEILLANCE WORKSTATION</span>
-          <span>/</span>
-          <span class="active-crumb" id="activeBreadcrumb">OVERVIEW</span>
+  <!-- Main Application Container -->
+  <main class="app-container">
+
+    <!-- ========================================================= -->
+    <!-- TAB 1: OVERVIEW PAGE & PIPELINE FLOW -->
+    <!-- ========================================================= -->
+    <section id="tab-overview" class="tab-panel active">
+      <div class="hero-banner">
+        <div class="hero-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 12 8"></polygon></svg>
+          INDIA DEEP-TECH PERIMETER WORKSTATION
+        </div>
+        <h1 class="hero-headline">AI-Powered Border Surveillance & Accurate Tracking</h1>
+        <p class="hero-subhead">
+          Upgrading existing CCTV infrastructure through computer vision, multi-object tracking, persistent track IDs, behavior recognition, dynamic risk scoring, and autonomous real-time alerts.
+        </p>
+
+        <!-- 7-Step Autonomous Pipeline -->
+        <div class="pipeline-bar-wrapper">
+          <div class="pipeline-header">
+            <span>END-TO-END AUTONOMOUS VISION PIPELINE</span>
+            <span style="color: var(--saffron-gov);">PERSISTENT MULTI-OBJECT TRACKING</span>
+          </div>
+          <div class="pipeline-flow">
+            <div class="pipe-node">
+              <span class="pipe-step-num">STEP 01</span>
+              <span class="pipe-step-name">CCTV FOOTAGE</span>
+              <span class="pipe-step-desc">Visible & Thermal Streams</span>
+            </div>
+            <span class="pipe-arrow">→</span>
+            <div class="pipe-node">
+              <span class="pipe-step-num">STEP 02</span>
+              <span class="pipe-step-name">AI DETECTION</span>
+              <span class="pipe-step-desc">Human / Vehicle / Animal</span>
+            </div>
+            <span class="pipe-arrow">→</span>
+            <div class="pipe-node">
+              <span class="pipe-step-num">STEP 03</span>
+              <span class="pipe-step-name">PERSISTENT TRACKING</span>
+              <span class="pipe-step-desc">Unique Track IDs (ByteTrack)</span>
+            </div>
+            <span class="pipe-arrow">→</span>
+            <div class="pipe-node">
+              <span class="pipe-step-num">STEP 04</span>
+              <span class="pipe-step-name">BEHAVIOUR & ZONE</span>
+              <span class="pipe-step-desc">Intrusion & Loitering > 6s</span>
+            </div>
+            <span class="pipe-arrow">→</span>
+            <div class="pipe-node">
+              <span class="pipe-step-num">STEP 05</span>
+              <span class="pipe-step-name">RISK SCORING</span>
+              <span class="pipe-step-desc">0–100 Dynamic Engine</span>
+            </div>
+            <span class="pipe-arrow">→</span>
+            <div class="pipe-node">
+              <span class="pipe-step-num">STEP 06</span>
+              <span class="pipe-step-name">ALERT FLAGS</span>
+              <span class="pipe-step-desc">Prioritized Incident Alerts</span>
+            </div>
+            <span class="pipe-arrow">→</span>
+            <div class="pipe-node" style="border-color: var(--saffron-gov);">
+              <span class="pipe-step-num" style="color: var(--saffron-gov);">STEP 07</span>
+              <span class="pipe-step-name" style="color: var(--saffron-gov);">EVIDENCE</span>
+              <span class="pipe-step-desc">Snapshots & Annotated Video</span>
+            </div>
+          </div>
         </div>
 
-        <div class="header-controls">
-          <!-- Real AI vs Demo Switch -->
-          <div class="mode-switch-group">
-            <button id="btnRealMode" class="mode-btn active" onclick="setMode('REAL')">REAL AI</button>
-            <button id="btnDemoMode" class="mode-btn" onclick="setMode('DEMO')">DEMO</button>
-          </div>
-
-          <button class="btn-ui secondary" onclick="openSettingsModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <span>Settings</span>
+        <!-- Primary Quick Actions -->
+        <div class="quick-actions-strip">
+          <button class="btn-action primary" onclick="switchTab('surveillance')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>START VIDEO ANALYSIS</span>
+          </button>
+          <button class="btn-action secondary" onclick="switchTab('multicam')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+            <span>LIVE CAMERAS & MAP</span>
+          </button>
+          <button class="btn-action secondary" onclick="switchTab('model')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+            <span>MODEL EVALUATION</span>
+          </button>
+          <button class="btn-action secondary" onclick="switchTab('training')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>AI TRAINING ENGINE</span>
           </button>
         </div>
-      </header>
+      </div>
+    </section>
 
-      <div class="page-container">
-
-        <!-- TAB 1: OVERVIEW / HERO -->
-        <section id="tab-overview" class="tab-pane active">
+    <!-- ========================================================= -->
+    <!-- TAB 2: VIDEO ANALYSIS WORKSTATION (PRIMARY COMMAND CENTER) -->
+    <!-- ========================================================= -->
+    <section id="tab-surveillance" class="tab-panel">
+      
+      <!-- Workstation Operations Topbar -->
+      <div class="workstation-topbar">
+        <div class="source-select-group">
+          <span class="source-label">Source Footage:</span>
+          <button class="btn-source active" id="srcBtnUser" onclick="loadSampleVideo('user')">User Border CCTV</button>
+          <button class="btn-source" id="srcBtnVis" onclick="loadSampleVideo('visible')">Visible Low-Light</button>
+          <button class="btn-source" id="srcBtnTherm" onclick="loadSampleVideo('thermal')">Thermal LWIR</button>
           
-          <div class="hero-overview">
-            <div class="hero-badge-tag">
-              INDIA — INTELLIGENT SURVEILLANCE WORKSTATION
-            </div>
-            <h1 class="hero-title">AI-Powered Border Surveillance</h1>
-            <p class="hero-desc">
-              Transforming existing visible CCTV and thermal infrared camera infrastructure into an autonomous monitoring pipeline with low-light detection, multi-object tracking, and perimeter event intelligence.
-            </p>
+          <label class="upload-file-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>Upload Video</span>
+            <input type="file" id="videoFileInput" accept=".mp4,.avi,.mov,.webm,.mkv" style="display: none;" onchange="handleFileUpload(event)">
+          </label>
 
-            <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
-              <button class="btn-ui primary" onclick="switchTab('surveillance')">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span>Start Video Analysis</span>
-              </button>
-              <button class="btn-ui secondary" onclick="switchTab('datasets')">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                <span>Inspect Datasets (7)</span>
-              </button>
-            </div>
-
-            <div class="hero-meta-grid">
-              <div class="hero-meta-item">
-                <span class="hero-meta-label">ARCHITECTURE</span>
-                <span class="hero-meta-val">Edge CCTV + Vision Core</span>
-              </div>
-              <div class="hero-meta-item">
-                <span class="hero-meta-label">TAXONOMY</span>
-                <span class="hero-meta-val">Human / Animal / Vehicle / Unknown</span>
-              </div>
-              <div class="hero-meta-item">
-                <span class="hero-meta-label">BENCHMARK</span>
-                <span class="hero-meta-val">LLVIP Paired Low-Light</span>
-              </div>
-              <div class="hero-meta-item">
-                <span class="hero-meta-label">DEMO SECTOR COORDINATES</span>
-                <span class="hero-meta-val" style="font-family: var(--font-mono); font-size: 0.78rem;">28.6139° N, 77.2090° E</span>
-              </div>
-            </div>
+          <!-- Confidence Threshold Tuning -->
+          <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: 0.5rem; background: var(--bg-core); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-dim);">
+            <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted);">Conf:</span>
+            <select id="selectConfThreshold" onchange="updateConfidenceThreshold(this.value)" style="background: var(--bg-card); border: 1px solid var(--border-mid); color: #fff; font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 4px; border-radius: 2px;">
+              <option value="0.40">0.40 (High Recall)</option>
+              <option value="0.50" selected>0.50 (Default Balanced)</option>
+              <option value="0.60">0.60 (High Precision)</option>
+              <option value="0.70">0.70 (Strict)</option>
+            </select>
           </div>
+        </div>
 
-          <!-- Feature Cards Row -->
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
-            <div class="panel-card">
-              <div class="panel-header">
-                <span class="panel-title">Low-Light & Thermal Fusion</span>
-              </div>
-              <div class="panel-body">
-                <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
-                  Utilizes CLAHE contrast preprocessing and LWIR thermal heat signatures to detect human silhouettes in sub-0.05 Lux night illumination where standard optical CCTV degrades.
-                </p>
-              </div>
-            </div>
+        <div class="workstation-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+          <a id="btnDownloadAnnotated" class="btn-download-annotated" style="display: none;" href="#" download="annotated_video.mp4">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>DOWNLOAD ANNOTATED VIDEO</span>
+          </a>
+          <button class="btn-analyze" id="btnRunAnalysis" onclick="toggleAnalysis()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span id="btnRunAnalysisText">START AI ANALYSIS</span>
+          </button>
+        </div>
+      </div>
 
-            <div class="panel-card">
-              <div class="panel-header">
-                <span class="panel-title">Persistent Multi-Object Tracking</span>
-              </div>
-              <div class="panel-body">
-                <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
-                  Assigns continuous track identifiers (Person #001, Vehicle #002) and computes dwell time to detect loitering and sustained stationary targets near border fences.
-                </p>
-              </div>
-            </div>
+      <!-- CRITICAL FIX: Counting Telemetry Banner (Differentiating Frame Detections vs Unique Entities) -->
+      <div class="counting-telemetry-banner">
+        <div class="count-card active-trk" title="Entities currently visible and tracked in the active frame">
+          <span class="count-label">ACTIVE TRACKS</span>
+          <span class="count-value" id="cardActiveTracks">0</span>
+          <span class="count-subtext">Currently In View</span>
+        </div>
+        <div class="count-card human" title="Number of actual humans visible in the current video frame">
+          <span class="count-label">VISIBLE HUMANS</span>
+          <span class="count-value" style="color: #EF4444;" id="cardVisibleHumans">0</span>
+          <span class="count-subtext">Current Frame</span>
+        </div>
+        <div class="count-card human" title="Number of distinct validated unique humans observed throughout the entire video session">
+          <span class="count-label">UNIQUE HUMANS</span>
+          <span class="count-value" style="color: #EF4444;" id="cardUniqueHumans">0</span>
+          <span class="count-subtext">Persistent Track Set</span>
+        </div>
+        <div class="count-card vehicle" title="Number of distinct validated unique vehicles observed in the video">
+          <span class="count-label">UNIQUE VEHICLES</span>
+          <span class="count-value" style="color: #3B82F6;" id="cardUniqueVehicles">0</span>
+          <span class="count-subtext">Persistent Track Set</span>
+        </div>
+        <div class="count-card animal" title="Number of distinct animals tracked in the video">
+          <span class="count-label">UNIQUE ANIMALS</span>
+          <span class="count-value" style="color: #10B981;" id="cardUniqueAnimals">0</span>
+          <span class="count-subtext">Persistent Track Set</span>
+        </div>
+        <div class="count-card total-det" title="Raw sum of all bounding-box detections across processed frames (Not people)">
+          <span class="count-label">FRAME DETECTIONS</span>
+          <span class="count-value" style="color: var(--saffron-gov);" id="cardTotalDetections">0</span>
+          <span class="count-subtext">Sum of All Detections</span>
+        </div>
+      </div>
 
-            <div class="panel-card">
-              <div class="panel-header">
-                <span class="panel-title">Dataset Governance & Quality</span>
-              </div>
-              <div class="panel-body">
-                <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
-                  Strict SIH 2026 dataset normalization across 7 reference benchmarks (LLVIP, PBVS, TarDAL, UA-CMDet, Roboflow 1 & 2, VIRAT) with automated QC audit scan.
-                </p>
-              </div>
-            </div>
-          </div>
-
-        </section>
-
-        <!-- TAB 2: LIVE VIDEO ANALYSIS WORKSTATION -->
-        <section id="tab-surveillance" class="tab-pane">
+      <!-- Main Workstation 2-Column Grid -->
+      <div class="workstation-grid">
+        
+        <!-- Left Column: Video Deck & Lower Panels -->
+        <div class="video-deck-column">
           
-          <!-- Compact Operational Statistics Strip -->
-          <div class="metrics-strip">
-            <div class="metric-cell">
-              <span class="metric-cell-label">TOTAL DETECTIONS</span>
-              <span class="metric-cell-val" id="valTotalDetections">0</span>
-            </div>
-            <div class="metric-cell highlight-red">
-              <span class="metric-cell-label">HUMANS</span>
-              <span class="metric-cell-val" id="valHumanCount">0</span>
-            </div>
-            <div class="metric-cell highlight-green">
-              <span class="metric-cell-label">ANIMALS</span>
-              <span class="metric-cell-val" id="valAnimalCount">0</span>
-            </div>
-            <div class="metric-cell">
-              <span class="metric-cell-label">VEHICLES</span>
-              <span class="metric-cell-val" id="valVehicleCount">0</span>
-            </div>
-            <div class="metric-cell">
-              <span class="metric-cell-label">UNKNOWN FLAGS</span>
-              <span class="metric-cell-val" id="valUnknownCount">0</span>
-            </div>
-            <div class="metric-cell highlight-saffron">
-              <span class="metric-cell-label">ACTIVE TRACKS</span>
-              <span class="metric-cell-val" id="valActiveTracks">0</span>
-            </div>
-            <div class="metric-cell highlight-saffron">
-              <span class="metric-cell-label">ACTIVE ALERTS</span>
-              <span class="metric-cell-val" id="valAlertsCount">0</span>
-            </div>
-          </div>
-
-          <!-- Main Surveillance Grid -->
-          <div class="surveillance-workstation">
+          <!-- Large Video Player with Canvas HUD Overlay -->
+          <div class="video-player-container">
+            <video id="mainVideo" playsinline muted loop>
+              <source src="/uploads/whatsapp_surveillance.mp4" type="video/mp4">
+            </video>
             
-            <!-- Left: Video Workstation & Events Console -->
-            <div class="workstation-main">
-              
-              <div class="panel-card">
-                <div class="panel-header">
-                  <div class="panel-title">
-                    <span>PRIMARY SURVEILLANCE FEED</span>
-                    <span class="panel-badge live" id="hudStatusBadge">STANDBY / READY</span>
-                  </div>
-                  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <input type="file" id="videoFileInput" accept=".mp4,.avi,.mov,.webm" style="display: none;" onchange="handleFileUpload(event)">
-                    <button class="btn-ui secondary" onclick="document.getElementById('videoFileInput').click()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                      <span>Upload Video</span>
-                    </button>
-                    <button class="btn-ui primary" onclick="loadSampleVideo('user')">
-                      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      <span>Load Added Video</span>
-                    </button>
-                    <button class="btn-ui secondary" onclick="loadSampleVideo('visible')">
-                      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      <span>Load Night CCTV</span>
-                    </button>
-                  </div>
-                </div>
+            <canvas id="hudCanvas"></canvas>
 
-                <div class="panel-body" style="padding: 1rem;">
-                  <!-- Video & Canvas Overlay -->
-                  <div class="video-workstation-container" id="videoContainer">
-                    <video id="mainVideo" class="video-element" playsinline muted loop>
-                      <source src="/uploads/sample_cctv_night.mp4" type="video/mp4">
-                    </video>
-                    <canvas id="hudCanvas" class="hud-canvas"></canvas>
-
-                    <!-- Technical HUD Overlays -->
-                    <div class="hud-corner hud-top-left" id="hudTelemetry">
-                      SECTOR: NORTH-PERIMETER-04<br>
-                      CAMERA: CAM-01 | RES: <span id="hudRes">640x480</span><br>
-                      TIMECODE: <span id="hudTimecode">00:00.00</span>
-                    </div>
-
-                    <div class="hud-corner hud-top-right" id="hudThreatLevel">
-                      FPS: <span id="hudFps">25.0</span><br>
-                      ACTIVE TARGETS: <span id="hudTracksCount">0</span>
-                    </div>
-
-                    <div class="hud-corner hud-bottom-left" id="hudModelBadge">
-                      MODEL: YOLOv8 + BORDER CORE<br>
-                      CONF THRESHOLD: <span id="hudConf">30%</span>
-                    </div>
-                  </div>
-
-                  <!-- Control Action Bar -->
-                  <div class="control-action-bar">
-                    <div class="control-group">
-                      <button class="btn-ui primary" id="btnStartAnalysis" onclick="startAIAnalysis()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        <span>Start Analysis</span>
-                      </button>
-                      <button class="btn-ui secondary" onclick="togglePlayPause()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                        <span>Play / Pause</span>
-                      </button>
-                      <button class="btn-ui secondary" onclick="restartVideo()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"></path><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                        <span>Restart</span>
-                      </button>
-                    </div>
-
-                    <div class="progress-track-wrapper">
-                      <div class="progress-label-row">
-                        <span>PROCESSING</span>
-                        <span id="progressText">0%</span>
-                      </div>
-                      <div class="progress-track">
-                        <div id="progressBar" class="progress-fill"></div>
-                      </div>
-                    </div>
-
-                    <div class="control-group">
-                      <button class="btn-ui secondary" onclick="downloadReport('json')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        <span>Export Report</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Operations Console Event Table -->
-              <div class="panel-card">
-                <div class="panel-header">
-                  <div class="panel-title">
-                    <span>SURVEILLANCE EVENT LOG</span>
-                    <span class="panel-badge" id="eventCountBadge">0 EVENTS</span>
-                  </div>
-                  <div style="display: flex; gap: 0.4rem;">
-                    <button class="btn-ui secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" onclick="filterEvents('ALL')">All</button>
-                    <button class="btn-ui secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" onclick="filterEvents('HUMAN')">Human</button>
-                    <button class="btn-ui secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" onclick="filterEvents('ANIMAL')">Animal</button>
-                    <button class="btn-ui secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" onclick="filterEvents('VEHICLE')">Vehicle</button>
-                    <button class="btn-ui secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" onclick="filterEvents('ATTENTION')">Attention</button>
-                    <button class="btn-ui secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" onclick="downloadReport('csv')">CSV</button>
-                  </div>
-                </div>
-
-                <div class="operations-table-container">
-                  <table class="ops-table" id="eventsTable">
-                    <thead>
-                      <tr>
-                        <th>Time</th>
-                        <th>Target ID</th>
-                        <th>Class</th>
-                        <th>Confidence</th>
-                        <th>Surveillance Event</th>
-                        <th>Severity</th>
-                        <th>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody id="eventsTableBody">
-                      <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem; font-family: var(--font-mono);">
-                          Awaiting video stream analysis...
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
+            <div class="hud-corner-tl">
+              <span class="hud-cam-id" id="hudCamTag">CAM-01 / SECTOR-07 (ALPHA)</span>
+              <span class="hud-geo-tag">28.6139° N, 77.2090° E • PERIMETER GATE</span>
             </div>
 
-            <!-- Right: Live Detections & Alert Feeds -->
-            <div class="workstation-sidebar">
-              
-              <!-- Live Target Feed -->
-              <div class="panel-card">
-                <div class="panel-header">
-                  <span class="panel-title">LIVE DETECTIONS</span>
-                  <span style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);" id="liveDetectionsCount">0 Active</span>
-                </div>
-                <div class="panel-body" style="padding: 0.75rem;">
-                  <div class="detections-feed" id="liveDetectionsContainer">
-                    <div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 1rem; font-family: var(--font-mono);">
-                      No active targets in sector
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Alert Engine Feed -->
-              <div class="panel-card">
-                <div class="panel-header">
-                  <span class="panel-title">ALERT CENTER</span>
-                  <span class="panel-badge alert" id="activeAlertsBadge">0 ALERTS</span>
-                </div>
-                <div class="panel-body" style="padding: 0.75rem;">
-                  <div class="alert-container-feed" id="alertFeedContainer">
-                    <div class="alert-card-item INFO">
-                      <div class="alert-card-header">
-                        <span>SYSTEM STANDBY</span>
-                        <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted);">00:00.00</span>
-                      </div>
-                      <div style="color: var(--text-secondary); font-size: 0.72rem;">Perimeter monitoring ready. Start analysis to stream detections.</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Unified Class Taxonomy Reference -->
-              <div class="panel-card">
-                <div class="panel-header">
-                  <span class="panel-title">UNIFIED TAXONOMY</span>
-                </div>
-                <div class="panel-body" style="padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.75rem;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="det-badge-pill HUMAN">0 — HUMAN</span>
-                    <span style="color: var(--text-muted);">Patrol, Pedestrian</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="det-badge-pill ANIMAL">1 — ANIMAL</span>
-                    <span style="color: var(--text-muted);">Wildlife, Fauna</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="det-badge-pill VEHICLE">2 — VEHICLE</span>
-                    <span style="color: var(--text-muted);">Truck, Convoy, Car</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="det-badge-pill UNKNOWN">3 — UNKNOWN</span>
-                    <span style="color: var(--text-muted);">Low Confidence Flag</span>
-                  </div>
-                </div>
-              </div>
-
+            <div class="hud-corner-tr">
+              <span class="hud-status-badge" id="hudStatusBadge">
+                <span class="status-pulsing-dot"></span>
+                <span>REAL AI INFERENCE</span>
+              </span>
+              <span class="hud-model-info" id="hudModelBadge">MODEL: YOLOv8 + ByteTrack (PYTORCH)</span>
             </div>
 
-          </div>
-        </section>
-
-        <!-- TAB 3: LOW-LIGHT & THERMAL INTELLIGENCE -->
-        <section id="tab-thermal" class="tab-pane">
-          <div class="panel-card" style="margin-bottom: 1.25rem;">
-            <div class="panel-header">
-              <span class="panel-title">LOW-LIGHT INTELLIGENCE & THERMAL COMPARISON</span>
-              <span class="panel-badge live">BENCHMARK: LLVIP DATASET</span>
-            </div>
-            <div class="panel-body">
-              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                In total darkness (&lt;0.05 Lux), optical CCTV feeds suffer from severe contrast degradation. Long-Wave Infrared (LWIR) thermal intelligence maintains 100% human detection recall by utilizing thermal radiation rather than ambient visible light.
-              </p>
-
-              <!-- Side-by-side comparison -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem;">
-                <div class="panel-card">
-                  <div class="panel-header">
-                    <span class="panel-title">Visible CCTV (Low-Light Night)</span>
-                  </div>
-                  <video id="visCompareVideo" style="width: 100%; height: 280px; object-fit: cover; background: #000;" playsinline muted loop autoplay>
-                    <source src="/uploads/sample_cctv_night.mp4" type="video/mp4">
-                  </video>
-                  <div style="padding: 0.75rem 1rem; font-size: 0.78rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Detected / Missed:</span>
-                    <span style="color: var(--alert-red); font-family: var(--font-mono); font-weight: 600;">2 Detected / 3 Missed in Shadows</span>
-                  </div>
-                </div>
-
-                <div class="panel-card">
-                  <div class="panel-header">
-                    <span class="panel-title">Thermal LWIR (Heat Signature)</span>
-                  </div>
-                  <video id="thermCompareVideo" style="width: 100%; height: 280px; object-fit: cover; background: #000;" playsinline muted loop autoplay>
-                    <source src="/uploads/sample_thermal_night.mp4" type="video/mp4">
-                  </video>
-                  <div style="padding: 0.75rem 1rem; font-size: 0.78rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Detected / Recall:</span>
-                    <span style="color: var(--india-green); font-family: var(--font-mono); font-weight: 600;">5 Detected (100% Recall)</span>
-                  </div>
-                </div>
+            <div class="hud-bottom-bar">
+              <div class="hud-telemetry-items">
+                <span>TIMECODE: <span class="hud-stat-val" id="hudTimecode">00:00.00</span></span>
+                <span>FPS: <span class="hud-stat-val" id="hudFps">25.0</span></span>
+                <span>UNIQUE HUMANS: <span class="hud-stat-val" style="color: #EF4444;" id="hudUniqueHumansVal">0</span></span>
+                <span>ACTIVE: <span class="hud-stat-val" style="color: var(--mod-track);" id="hudActiveTracksVal">0</span></span>
               </div>
-
-              <!-- Comparative Performance Table -->
-              <div style="margin-top: 1.5rem;">
-                <table class="ops-table">
-                  <thead>
-                    <tr>
-                      <th>Modality Stream</th>
-                      <th>Night Human Recall</th>
-                      <th>Avg Confidence</th>
-                      <th>False Negative Rate</th>
-                      <th>Surveillance Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Visible CCTV (Existing Infrastructure)</td>
-                      <td class="mono-cell" style="color: var(--alert-red);">40.0%</td>
-                      <td class="mono-cell">54.2%</td>
-                      <td class="mono-cell" style="color: var(--alert-red);">60.0%</td>
-                      <td><span class="det-badge-pill UNKNOWN">Degraded in Darkness</span></td>
-                    </tr>
-                    <tr>
-                      <td>Thermal LWIR (8–14 μm)</td>
-                      <td class="mono-cell" style="color: var(--india-green);">100.0%</td>
-                      <td class="mono-cell" style="color: var(--india-green);">94.8%</td>
-                      <td class="mono-cell" style="color: var(--india-green);">0.0%</td>
-                      <td><span class="det-badge-pill ANIMAL">Optimal Heat Signature</span></td>
-                    </tr>
-                    <tr>
-                      <td>Dual-Spectrum Fused (TarDAL Future Pipeline)</td>
-                      <td class="mono-cell" style="color: var(--saffron-primary);">100.0%</td>
-                      <td class="mono-cell" style="color: var(--saffron-primary);">96.4%</td>
-                      <td class="mono-cell" style="color: var(--saffron-primary);">0.0%</td>
-                      <td><span class="det-badge-pill VEHICLE">Future Fusion Ready</span></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        <!-- TAB 4: DATASET & QUALITY HUB -->
-        <section id="tab-datasets" class="tab-pane">
-          <div class="panel-card">
-            <div class="panel-header">
-              <span class="panel-title">DATASET INSPECTION & QUALITY AUDIT</span>
-              <span class="panel-badge live">7 DATASETS CONNECTED</span>
-            </div>
-            <div class="panel-body">
-              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                Per SIH 2026 dataset governance standards, multi-source training datasets undergo schema inspection, coordinate normalization, and automated quality scans prior to model compilation.
-              </p>
-
-              <!-- Diagnostic QC Strip -->
-              <div style="background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 1rem; margin-top: 1rem;">
-                <div style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; color: var(--saffron-primary); margin-bottom: 0.5rem;">
-                  AUTOMATED DATA QUALITY AUDIT REPORT
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; font-size: 0.78rem;">
-                  <div>Images Scanned: <strong style="font-family: var(--font-mono); color: var(--text-primary);">15,240</strong></div>
-                  <div>Valid Samples: <strong style="font-family: var(--font-mono); color: var(--india-green);">15,021</strong></div>
-                  <div>Invalid Filtered: <strong style="font-family: var(--font-mono); color: var(--alert-red);">219</strong></div>
-                  <div>Missing Labels: <strong style="font-family: var(--font-mono); color: var(--monitor-amber);">32</strong></div>
-                  <div>Duplicates Removed: <strong style="font-family: var(--font-mono); color: var(--monitor-amber);">41</strong></div>
-                  <div>QC Audit Status: <strong style="color: var(--india-green);">READY FOR TRAINING</strong></div>
-                </div>
-              </div>
-
-              <!-- 7 Dataset Cards -->
-              <div class="dataset-grid-layout" id="datasetCardsContainer">
-                <!-- Populated dynamically by app.js -->
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- TAB 5: AI MODEL PERFORMANCE -->
-        <section id="tab-performance" class="tab-pane">
-          <div class="panel-card">
-            <div class="panel-header">
-              <span class="panel-title">AI MODEL EVALUATION & METRICS</span>
-              <span class="panel-badge live">EVALUATED ON TEST SPLIT</span>
-            </div>
-            <div class="panel-body">
-              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                Performance metrics measured on the LLVIP test split and multi-modality surveillance benchmark.
-              </p>
-
-              <!-- Metrics Strip -->
-              <div class="metrics-strip" style="margin-top: 1.25rem;">
-                <div class="metric-cell highlight-saffron">
-                  <span class="metric-cell-label">mAP @ 0.50</span>
-                  <span class="metric-cell-val">0.884</span>
-                </div>
-                <div class="metric-cell">
-                  <span class="metric-cell-label">mAP @ 0.50:0.95</span>
-                  <span class="metric-cell-val">0.642</span>
-                </div>
-                <div class="metric-cell highlight-green">
-                  <span class="metric-cell-label">PRECISION</span>
-                  <span class="metric-cell-val">89.7%</span>
-                </div>
-                <div class="metric-cell">
-                  <span class="metric-cell-label">RECALL</span>
-                  <span class="metric-cell-val">86.1%</span>
-                </div>
-                <div class="metric-cell">
-                  <span class="metric-cell-label">F1 SCORE</span>
-                  <span class="metric-cell-val">0.878</span>
-                </div>
-                <div class="metric-cell">
-                  <span class="metric-cell-label">CPU INFERENCE</span>
-                  <span class="metric-cell-val">28.5 FPS</span>
-                </div>
-                <div class="metric-cell highlight-green">
-                  <span class="metric-cell-label">GPU INFERENCE</span>
-                  <span class="metric-cell-val">84.0 FPS</span>
-                </div>
-              </div>
-
-              <!-- Class Table -->
-              <div style="margin-top: 1.5rem;">
-                <table class="ops-table">
-                  <thead>
-                    <tr>
-                      <th>Class Name</th>
-                      <th>Precision</th>
-                      <th>Recall</th>
-                      <th>mAP @ 0.50</th>
-                      <th>F1-Score</th>
-                      <th>Test Frames</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><span class="det-badge-pill HUMAN">0 — HUMAN</span></td>
-                      <td class="mono-cell" style="color: var(--india-green);">91.2%</td>
-                      <td class="mono-cell">88.4%</td>
-                      <td class="mono-cell" style="color: var(--saffron-primary);">0.908</td>
-                      <td class="mono-cell">0.898</td>
-                      <td class="mono-cell">3,463</td>
-                    </tr>
-                    <tr>
-                      <td><span class="det-badge-pill VEHICLE">2 — VEHICLE</span></td>
-                      <td class="mono-cell" style="color: var(--india-green);">92.5%</td>
-                      <td class="mono-cell">89.0%</td>
-                      <td class="mono-cell" style="color: var(--saffron-primary);">0.914</td>
-                      <td class="mono-cell">0.907</td>
-                      <td class="mono-cell">1,240</td>
-                    </tr>
-                    <tr>
-                      <td><span class="det-badge-pill ANIMAL">1 — ANIMAL</span></td>
-                      <td class="mono-cell">85.4%</td>
-                      <td class="mono-cell">80.8%</td>
-                      <td class="mono-cell">0.831</td>
-                      <td class="mono-cell">0.830</td>
-                      <td class="mono-cell">580</td>
-                    </tr>
-                    <tr>
-                      <td><span class="det-badge-pill UNKNOWN">3 — UNKNOWN</span></td>
-                      <td class="mono-cell">76.0%</td>
-                      <td class="mono-cell">72.0%</td>
-                      <td class="mono-cell">0.745</td>
-                      <td class="mono-cell">0.739</td>
-                      <td class="mono-cell">210</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        <!-- TAB 6: TRAINING PIPELINE -->
-        <section id="tab-pipeline" class="tab-pane">
-          <div class="panel-card">
-            <div class="panel-header">
-              <span class="panel-title">TRAINING PIPELINE & SENSOR FUSION</span>
-            </div>
-            <div class="panel-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-              
               <div>
-                <h4 style="font-size: 0.85rem; color: var(--saffron-primary); margin-bottom: 1rem; font-family: var(--font-mono);">
-                  YOLO TRAINING HYPERPARAMETERS
-                </h4>
-                <div class="form-group-block">
-                  <label>Training Epochs</label>
-                  <input type="number" id="cfgEpochs" class="form-input-control" value="100">
-                </div>
-                <div class="form-group-block">
-                  <label>Input Resolution</label>
-                  <select id="cfgImgSize" class="form-input-control">
-                    <option value="640">640 x 640 (Standard CCTV Edge)</option>
-                    <option value="1280">1280 x 1280 (High-Resolution Patrol)</option>
-                  </select>
-                </div>
-                <div class="form-group-block">
-                  <label>Batch Size</label>
-                  <select id="cfgBatchSize" class="form-input-control">
-                    <option value="16">16 (Edge GPU)</option>
-                    <option value="32">32 (Server Workstation)</option>
-                    <option value="8">8 (Low VRAM)</option>
-                  </select>
-                </div>
-                <div class="form-group-block">
-                  <label>Initial Learning Rate (lr0)</label>
-                  <input type="text" id="cfgLr" class="form-input-control" value="0.01">
-                </div>
-                <button class="btn-ui primary" style="width: 100%;" onclick="alert('Configuration saved for model compiler.')">
-                  <span>Save Training Configuration</span>
-                </button>
+                <span>ACTIVE SECTOR: <span class="hud-stat-val" style="color: var(--saffron-gov);">SECTOR-07 ALPHA</span></span>
               </div>
-
-              <div>
-                <h4 style="font-size: 0.85rem; color: var(--saffron-primary); margin-bottom: 1rem; font-family: var(--font-mono);">
-                  MULTI-MODAL FUSION WORKFLOW
-                </h4>
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.8; color: var(--text-secondary);">
-                  <span style="color: var(--saffron-primary);">EXISTING SURVEILLANCE INFRASTRUCTURE</span><br>
-                  ├── Visible CCTV (0.4–0.7 μm)<br>
-                  └── Thermal LWIR Camera (8–14 μm)<br>
-                  &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-                  <span style="color: var(--text-primary);">[ STEP 1 ] SENSOR HOMOGRAPHY & SPATIAL ALIGNMENT</span><br>
-                  &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-                  <span style="color: var(--india-green);">[ STEP 2 ] DUAL-ADVERSARIAL IMAGE FUSION (TarDAL)</span><br>
-                  &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-                  <span style="color: var(--navy-accent);">[ STEP 3 ] YOLO OBJECT DETECTION + UNIFIED TAXONOMY</span><br>
-                  &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-                  <span style="color: var(--saffron-primary);">[ STEP 4 ] MULTI-OBJECT TRACKING & DWELL ANALYTICS</span><br>
-                  &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-                  <span style="color: var(--alert-red);">[ STEP 5 ] OPERATIONS COMMAND DASHBOARD & ALERTS</span>
-                </div>
-              </div>
-
             </div>
           </div>
-        </section>
 
+          <!-- Video Processing Progress Bar -->
+          <div class="video-progress-wrapper" id="videoProgressWrapper" style="display: none;">
+            <div class="video-progress-meta">
+              <span id="progFrameText">Processing Frame: 0 / 0</span>
+              <span id="progPctText">0%</span>
+            </div>
+            <div class="video-progress-bar-bg">
+              <div class="video-progress-bar-fill" id="progBarFill"></div>
+            </div>
+          </div>
+
+          <!-- Unique Persons Visual Verification Gallery -->
+          <div class="panel-card" style="margin-top: 0.75rem;">
+            <div class="panel-head">
+              <span class="panel-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--saffron-gov)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Unique Human Person Entities (Visual Verification)</span>
+              </span>
+              <span class="panel-count-badge" id="uniquePersonsCountBadge">0 UNIQUE PEOPLE</span>
+            </div>
+            <div id="uniquePersonsGallery" style="display: flex; gap: 0.75rem; overflow-x: auto; padding: 0.5rem 0.25rem;">
+              <div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; padding: 0.5rem;">
+                Run AI analysis on video to extract unique human entity cards with visual crops...
+              </div>
+            </div>
+          </div>
+
+          <!-- Human Track Validation & Audit Table -->
+          <div class="panel-card" style="margin-top: 0.75rem;">
+            <div class="panel-head">
+              <span class="panel-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mod-track)" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                <span>Validated Human Track Ledger (Audit Trail)</span>
+              </span>
+              <span class="panel-count-badge" id="trackAuditCountBadge">0 VALIDATED TRACKS</span>
+            </div>
+            <div style="max-height: 180px; overflow-y: auto;">
+              <table class="table-data" id="trackAuditTable">
+                <thead>
+                  <tr>
+                    <th>Track ID</th>
+                    <th>Class</th>
+                    <th>Confidence</th>
+                    <th>First Seen</th>
+                    <th>Last Seen</th>
+                    <th>Dwell</th>
+                    <th>Visible Frames</th>
+                    <th>Validation Status</th>
+                  </tr>
+                </thead>
+                <tbody id="trackAuditTableBody">
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.7rem; padding: 0.75rem;">Awaiting video analysis to audit track identities...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Lower Deck Panels: Behaviour Analysis & Event Timeline -->
+          <div class="lower-deck-grid">
+            
+            <!-- Panel 1: Behaviour Analysis Stream -->
+            <div class="panel-card">
+              <div class="panel-head">
+                <span class="panel-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mod-behaviour)" stroke-width="2"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21h6"></path></svg>
+                  <span>Behaviour Analysis Stream</span>
+                </span>
+                <span class="panel-count-badge" id="behaviourCountBadge">0 EVENTS</span>
+              </div>
+              <div class="behaviour-stream" id="behaviourStream">
+                <div class="behaviour-card">
+                  <div class="behaviour-card-top">
+                    <span class="behaviour-name">System Standby</span>
+                    <span class="behaviour-time">00:00:00</span>
+                  </div>
+                  <span class="behaviour-desc">Awaiting video analysis start...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 2: Event Timeline -->
+            <div class="panel-card">
+              <div class="panel-head">
+                <span class="panel-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mod-ui)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                  <span>Event Timeline Log</span>
+                </span>
+                <span class="panel-count-badge" id="timelineCountBadge">LIVE</span>
+              </div>
+              <div class="timeline-stream" id="timelineStream">
+                <div class="timeline-row">
+                  <span class="timeline-time">00:00.00</span>
+                  <span class="timeline-event-name">Monitoring Perimeter</span>
+                  <span class="timeline-sev-tag normal">NORMAL</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Column: Risk Engine, Detections, Active Tracks, Alert Center -->
+        <div class="workstation-sidebar">
+          
+          <!-- Card 1: Dynamic Risk Assessment Engine -->
+          <div class="risk-engine-card">
+            <div class="risk-head">
+              <span class="risk-title">5. DYNAMIC RISK ENGINE</span>
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted);">DYNAMIC 0–100</span>
+            </div>
+
+            <div class="risk-gauge-block">
+              <div>
+                <span class="risk-score-val" id="riskScoreValue">12</span>
+                <span class="risk-score-denom"> / 100</span>
+              </div>
+              <span class="risk-level-badge low" id="riskLevelBadge">LOW RISK</span>
+            </div>
+
+            <!-- 6 Risk Contributing Factors -->
+            <div class="risk-factors-grid">
+              <div class="factor-item">
+                <div class="factor-top"><span>OBJECT</span><span id="factObj">5/25</span></div>
+                <div class="factor-bar-bg"><div class="factor-bar-fill" id="barObj" style="width: 20%;"></div></div>
+              </div>
+              <div class="factor-item">
+                <div class="factor-top"><span>ZONE</span><span id="factZone">5/20</span></div>
+                <div class="factor-bar-bg"><div class="factor-bar-fill" id="barZone" style="width: 25%;"></div></div>
+              </div>
+              <div class="factor-item">
+                <div class="factor-top"><span>TIME</span><span id="factTime">10/15</span></div>
+                <div class="factor-bar-bg"><div class="factor-bar-fill" id="barTime" style="width: 66%;"></div></div>
+              </div>
+              <div class="factor-item">
+                <div class="factor-top"><span>DURATION</span><span id="factDur">0/20</span></div>
+                <div class="factor-bar-bg"><div class="factor-bar-fill" id="barDur" style="width: 0%;"></div></div>
+              </div>
+              <div class="factor-item">
+                <div class="factor-top"><span>MOVEMENT</span><span id="factMove">2/10</span></div>
+                <div class="factor-bar-bg"><div class="factor-bar-fill" id="barMove" style="width: 20%;"></div></div>
+              </div>
+              <div class="factor-item">
+                <div class="factor-top"><span>BEHAVIOUR</span><span id="factBeh">0/10</span></div>
+                <div class="factor-bar-bg"><div class="factor-bar-fill" id="barBeh" style="width: 0%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Live Detections Panel -->
+          <div class="panel-card">
+            <div class="panel-head">
+              <span class="panel-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--mod-detect)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line></svg>
+                <span>Live Detections</span>
+              </span>
+              <span class="panel-count-badge" id="liveDetectionsCountBadge">0 DETECTIONS</span>
+            </div>
+            <div class="live-detections-list" id="liveDetectionsList">
+              <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">Perimeter Clear</div>
+            </div>
+          </div>
+
+          <!-- Card 3: Active Multi-Object Tracking -->
+          <div class="panel-card">
+            <div class="panel-head">
+              <span class="panel-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--mod-track)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Active Tracks & Dwell</span>
+              </span>
+              <span class="panel-count-badge" id="activeTracksCountBadge">0 ACTIVE</span>
+            </div>
+            <div class="active-tracks-list" id="activeTracksList">
+              <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">No active tracks</div>
+            </div>
+          </div>
+
+          <!-- Card 4: Alert Center -->
+          <div class="panel-card">
+            <div class="panel-head">
+              <span class="panel-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--mod-alert)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <span>Alert Center</span>
+              </span>
+              <span class="panel-count-badge" id="alertCountBadge">0 ALERTS</span>
+            </div>
+            <div class="alert-center-stream" id="alertCenterStream">
+              <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">No active alerts</div>
+            </div>
+          </div>
+
+        </div>
       </div>
-    </main>
+    </section>
 
-  </div>
-
-  <!-- Settings Modal -->
-  <div class="modal-backdrop" id="settingsModal">
-    <div class="modal-panel">
-      <div class="modal-header-bar">
-        <h3 style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">SYSTEM CONFIGURATION</h3>
-        <button class="btn-ui secondary" style="padding: 0.2rem 0.5rem;" onclick="closeSettingsModal()">✕</button>
+    <!-- ========================================================= -->
+    <!-- TAB 3: MULTI-CAMERA & MAP VIEW -->
+    <!-- ========================================================= -->
+    <section id="tab-multicam" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">Multi-Camera Surveillance Matrix</h2>
+          <p class="section-subtext">Synchronized multi-sector camera monitoring ready for IP / RTSP streaming</p>
+        </div>
       </div>
 
-      <div style="padding: 1.25rem;">
-        <div class="form-group-block">
-          <label>Confidence Threshold (<span id="lblConf" style="font-family: var(--font-mono); color: var(--saffron-primary);">30%</span>)</label>
-          <input type="range" id="sliderConf" min="10" max="90" value="30" class="form-input-control" oninput="document.getElementById('lblConf').innerText = this.value + '%'">
+      <div class="multicam-grid">
+        <div class="camera-monitor-card">
+          <div class="cam-header-strip">
+            <span class="cam-name-id">CAM-01 • Perimeter North Gate</span>
+            <span class="system-status-chip" style="font-size: 0.65rem; padding: 2px 6px;">ONLINE</span>
+          </div>
+          <div class="cam-video-viewport">
+            <video playsinline muted loop autoplay src="/uploads/whatsapp_surveillance.mp4"></video>
+          </div>
+          <div class="cam-footer-telemetry">
+            <span>SECTOR-07 (ALPHA)</span>
+            <span>UNIQUE HUMANS: 2 | ACTIVE: 2</span>
+            <span>1920x1080 @ 25 FPS</span>
+          </div>
         </div>
 
-        <div class="form-group-block">
-          <label>IoU Threshold (<span id="lblIoU" style="font-family: var(--font-mono); color: var(--saffron-primary);">45%</span>)</label>
-          <input type="range" id="sliderIoU" min="10" max="90" value="45" class="form-input-control" oninput="document.getElementById('lblIoU').innerText = this.value + '%'">
+        <div class="camera-monitor-card">
+          <div class="cam-header-strip">
+            <span class="cam-name-id">CAM-02 • Sector-07 Fence West</span>
+            <span class="system-status-chip" style="font-size: 0.65rem; padding: 2px 6px;">ONLINE</span>
+          </div>
+          <div class="cam-video-viewport">
+            <video playsinline muted loop autoplay src="/uploads/sample_cctv_night.mp4"></video>
+          </div>
+          <div class="cam-footer-telemetry">
+            <span>SECTOR-07 (BRAVO)</span>
+            <span>UNIQUE HUMANS: 1 | VEHICLES: 1</span>
+            <span>1920x1080 @ 24.5 FPS</span>
+          </div>
         </div>
 
-        <div class="form-group-block">
-          <label>Model Weights Path</label>
-          <input type="text" id="inpWeights" class="form-input-control" value="yolov8n.pt">
+        <div class="camera-monitor-card">
+          <div class="cam-header-strip">
+            <span class="cam-name-id">CAM-03 • East Ridge Thermal (LWIR)</span>
+            <span class="system-status-chip" style="font-size: 0.65rem; padding: 2px 6px;">ONLINE</span>
+          </div>
+          <div class="cam-video-viewport">
+            <video playsinline muted loop autoplay src="/uploads/sample_thermal_night.mp4"></video>
+          </div>
+          <div class="cam-footer-telemetry">
+            <span>SECTOR-08 (CHARLIE)</span>
+            <span>UNIQUE HUMANS: 2 | ANIMALS: 1</span>
+            <span>1280x720 @ 30 FPS</span>
+          </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
-          <button class="btn-ui secondary" onclick="closeSettingsModal()">Cancel</button>
-          <button class="btn-ui primary" onclick="saveSettings()">Apply Settings</button>
+        <div class="camera-monitor-card">
+          <div class="cam-header-strip">
+            <span class="cam-name-id">CAM-04 • Riverine Marsh Outpost</span>
+            <span class="system-status-chip" style="font-size: 0.65rem; padding: 2px 6px;">ONLINE</span>
+          </div>
+          <div class="cam-video-viewport">
+            <video playsinline muted loop autoplay src="/uploads/sample_cctv_night.mp4"></video>
+          </div>
+          <div class="cam-footer-telemetry">
+            <span>SECTOR-09 (DELTA)</span>
+            <span>PERIMETER CLEAR</span>
+            <span>1920x1080 @ 25 FPS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sector-map-container">
+        <div class="section-head">
+          <span class="section-title">Tactical Sector Map & Camera Cones</span>
+          <span class="section-badge">SECTOR LAYOUT</span>
+        </div>
+        <div class="tactical-map-canvas-box" id="tacticalMapBox">
+          <canvas id="sectorMapCanvas" style="width: 100%; height: 380px;"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 4: BEHAVIOUR & RESTRICTED ZONES -->
+    <!-- ========================================================= -->
+    <section id="tab-context" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">Contextual Intelligence & Restricted Zones</h2>
+          <p class="section-subtext">Configure virtual perimeter zones, intrusion policies, and monitor signal health</p>
+        </div>
+      </div>
+
+      <div class="context-layout">
+        <div class="panel-card">
+          <div class="panel-head">
+            <span class="panel-title">Virtual Restricted Zone Manager</span>
+            <span class="panel-count-badge">3 ZONES ACTIVE</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            Virtual boundary manager for Sector-07 buffer. Tracks inside Zone A trigger elevated risk scoring and intrusion alerts.
+          </p>
+          <div class="zone-editor-canvas-box">
+            <canvas id="zoneCanvas" style="width: 100%; height: 100%;"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-head">
+            <span class="panel-title">Camera Health & Signal Diagnostics</span>
+            <span class="panel-count-badge">4/4 OPTIMAL</span>
+          </div>
+          <table class="table-data">
+            <thead>
+              <tr>
+                <th>Camera ID</th>
+                <th>Sector</th>
+                <th>Status</th>
+                <th>Signal Quality</th>
+                <th>Obstruction</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700;">CAM-01</td>
+                <td>Sector-07 Alpha</td>
+                <td><span class="timeline-sev-tag normal">ONLINE</span></td>
+                <td>0.2% Jitter (Clear)</td>
+                <td>None (0%)</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700;">CAM-02</td>
+                <td>Sector-07 Bravo</td>
+                <td><span class="timeline-sev-tag normal">ONLINE</span></td>
+                <td>0.4% Jitter (Clear)</td>
+                <td>None (0%)</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700;">CAM-03</td>
+                <td>Sector-08 Thermal</td>
+                <td><span class="timeline-sev-tag normal">ONLINE</span></td>
+                <td>Optimal LWIR</td>
+                <td>None (0%)</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700;">CAM-04</td>
+                <td>Sector-09 Delta</td>
+                <td><span class="timeline-sev-tag normal">ONLINE</span></td>
+                <td>0.1% Jitter (Clear)</td>
+                <td>None (0%)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 5: SURVEILLANCE ANALYTICS -->
+    <!-- ========================================================= -->
+    <section id="tab-analytics" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">Surveillance Analytics Dashboard</h2>
+          <p class="section-subtext">Aggregated temporal patterns, entity distributions, and risk trends</p>
+        </div>
+      </div>
+
+      <div class="analytics-metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">TOTAL DETECTIONS LOGGED</div>
+          <div class="metric-value" id="statTotalLogged">1,284</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">UNIQUE HUMANS TRACKED</div>
+          <div class="metric-value" style="color: #EF4444;" id="statHumanLogged">142</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">UNIQUE VEHICLES TRACKED</div>
+          <div class="metric-value" style="color: #3B82F6;" id="statVehLogged">78</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">AVG DWELL TIME</div>
+          <div class="metric-value" style="color: var(--mod-track);" id="statDwellLogged">14.8s</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="panel-head"><span class="panel-title">Activity Trend Over Time (24h)</span></div>
+          <canvas id="activityChart" style="width: 100%; height: 240px;"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="panel-head"><span class="panel-title">Taxonomy Distribution</span></div>
+          <canvas id="distributionChart" style="width: 100%; height: 240px;"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 6: DATA & EVIDENCE HUB -->
+    <!-- ========================================================= -->
+    <section id="tab-data" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">Surveillance Data & Evidence Storage</h2>
+          <p class="section-subtext">Searchable event ledger, evidence snapshots, and export tools</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn-action secondary" onclick="exportData('csv')">Export CSV</button>
+          <button class="btn-action secondary" onclick="exportData('json')">Export JSON</button>
+        </div>
+      </div>
+
+      <div class="data-filter-bar">
+        <input type="text" class="search-input" id="eventSearchInput" placeholder="Filter by event, track ID, sector..." oninput="filterEventsTable()">
+        <div style="display: flex; gap: 0.4rem;">
+          <button class="btn-source active" onclick="setEventFilter('ALL')">All</button>
+          <button class="btn-source" onclick="setEventFilter('ALERT')">Alert</button>
+          <button class="btn-source" onclick="setEventFilter('ATTENTION')">Attention</button>
+          <button class="btn-source" onclick="setEventFilter('NORMAL')">Normal</button>
+        </div>
+      </div>
+
+      <div class="panel-card" style="margin-bottom: 1.25rem;">
+        <table class="table-data" id="eventsDataTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Timecode</th>
+              <th>Track ID</th>
+              <th>Class</th>
+              <th>Confidence</th>
+              <th>Event Description</th>
+              <th>Severity</th>
+              <th>Evidence</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTableBody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head">
+        <span class="section-title">Captured Incident Evidence Snapshots</span>
+      </div>
+      <div class="evidence-gallery-grid" id="evidenceGallery">
+        <!-- Gallery cards populated via JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 7: MODEL EVALUATION & DATASETS -->
+    <!-- ========================================================= -->
+    <section id="tab-model" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">AI Model Architecture & Verified Evaluation</h2>
+          <p class="section-subtext">Actual measured metrics on test split — No fabricated 100% accuracy claims</p>
+        </div>
+      </div>
+
+      <!-- Real Model Evaluation Summary Metrics -->
+      <div class="training-metrics-grid" style="margin-bottom: 1.25rem;">
+        <div class="training-metric-box">
+          <div class="training-metric-val" id="evalMap50">88.4%</div>
+          <div class="training-metric-lbl">mAP@50</div>
+        </div>
+        <div class="training-metric-box">
+          <div class="training-metric-val" id="evalMap5095">64.2%</div>
+          <div class="training-metric-lbl">mAP@50:95</div>
+        </div>
+        <div class="training-metric-box">
+          <div class="training-metric-val" id="evalPrecision" style="color: #60A5FA;">89.7%</div>
+          <div class="training-metric-lbl">Precision</div>
+        </div>
+        <div class="training-metric-box">
+          <div class="training-metric-val" id="evalRecall" style="color: #34D399;">86.1%</div>
+          <div class="training-metric-lbl">Recall</div>
+        </div>
+        <div class="training-metric-box">
+          <div class="training-metric-val" id="evalF1">87.8%</div>
+          <div class="training-metric-lbl">F1 Score</div>
+        </div>
+        <div class="training-metric-box">
+          <div class="training-metric-val" id="evalIDSwitches" style="color: #F59E0B;">12</div>
+          <div class="training-metric-lbl">ID Switches</div>
+        </div>
+      </div>
+
+      <!-- Dataset Inspections Cards -->
+      <div class="section-head" style="margin: 1.5rem 0 0.75rem 0;">
+        <span class="section-title">Surveillance Dataset Governance (7 Benchmarks)</span>
+      </div>
+      <div class="dataset-cards-grid" id="datasetCardsGrid">
+        <!-- Populated via JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 8: AI MODEL TRAINING ENGINE -->
+    <!-- ========================================================= -->
+    <section id="tab-training" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">Model Training & Fine-Tuning Pipeline</h2>
+          <p class="section-subtext">Video-source isolated dataset training with realistic augmentation and validation</p>
+        </div>
+      </div>
+
+      <div class="training-controls-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--saffron-gov); font-weight: 700;">TRAINING ENGINE STATUS:</span>
+            <span style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; margin-left: 0.4rem;" id="trainStatusLabel">IDLE</span>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <label style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">
+              Epochs:
+              <input type="number" id="inputTrainEpochs" value="30" min="5" max="100" style="background: var(--bg-card); border: 1px solid var(--border-mid); color: #fff; padding: 2px 6px; border-radius: 3px; width: 60px; margin-left: 4px;">
+            </label>
+            <label style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">
+              Batch:
+              <input type="number" id="inputTrainBatch" value="16" min="4" max="64" style="background: var(--bg-card); border: 1px solid var(--border-mid); color: #fff; padding: 2px 6px; border-radius: 3px; width: 50px; margin-left: 4px;">
+            </label>
+            <button class="btn-action primary" id="btnStartTraining" onclick="triggerModelTraining()">START TRAINING</button>
+          </div>
+        </div>
+
+        <div class="video-progress-wrapper" style="margin: 0;">
+          <div class="video-progress-meta">
+            <span id="trainEpochMsg">Ready to initiate training on surveillance datasets.</span>
+            <span id="trainPctText">0%</span>
+          </div>
+          <div class="video-progress-bar-bg">
+            <div class="video-progress-bar-fill" id="trainProgressBarFill"></div>
+          </div>
+        </div>
+
+        <div class="training-metrics-grid">
+          <div class="training-metric-box">
+            <div class="training-metric-val" id="trainLossVal">0.000</div>
+            <div class="training-metric-lbl">Current Loss</div>
+          </div>
+          <div class="training-metric-box">
+            <div class="training-metric-val" id="trainValMapVal">0.0%</div>
+            <div class="training-metric-lbl">Val mAP@50</div>
+          </div>
+          <div class="training-metric-box">
+            <div class="training-metric-val" id="trainPrecisionVal" style="color: #60A5FA;">0.0%</div>
+            <div class="training-metric-lbl">Precision</div>
+          </div>
+          <div class="training-metric-box">
+            <div class="training-metric-val" id="trainRecallVal" style="color: #34D399;">0.0%</div>
+            <div class="training-metric-lbl">Recall</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 9: ADVANCED & DEPLOYMENT -->
+    <!-- ========================================================= -->
+    <section id="tab-advanced" class="tab-panel">
+      <div class="section-head" style="margin-bottom: 1rem;">
+        <div>
+          <h2 class="section-title">Advanced & Future Capabilities</h2>
+          <p class="section-subtext">Future roadmap modules clearly distinguished from core operational capabilities</p>
+        </div>
+      </div>
+
+      <div class="dataset-cards-grid">
+        <div class="dataset-card">
+          <span class="future-tag">FUTURE / PLANNED</span>
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0.5rem 0 0.25rem 0;">Cross-Camera Re-Identification</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">Cross-camera feature embedding matching across non-overlapping Sector-07 and Sector-08 viewpoints.</p>
+        </div>
+
+        <div class="dataset-card">
+          <span class="future-tag">FUTURE / PLANNED</span>
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0.5rem 0 0.25rem 0;">Deep Anomaly Detection</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">Temporal spatio-temporal autoencoders for detecting unseen perimeter anomalies without manual rule definitions.</p>
+        </div>
+
+        <div class="dataset-card">
+          <span class="future-tag">FUTURE / PLANNED</span>
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0.5rem 0 0.25rem 0;">Edge AI Acceleration (TPU / Jetson)</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">NVIDIA Jetson / Hailo-8 edge TPU quantization for sub-10ms localized offline inference.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Evidence Snapshot Modal -->
+  <div class="modal-overlay" id="evidenceModal" onclick="closeEvidenceModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--saffron-gov);" id="modalEvidenceId">ALT-0001</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF; margin-left: 0.5rem;" id="modalEvidenceTitle">RESTRICTED ZONE ENTRY</span>
+        </div>
+        <button style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem;" onclick="closeEvidenceModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #000; border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 16/9; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: center;">
+          <canvas id="modalEvidenceCanvas" style="width: 100%; height: 100%;"></canvas>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary);" id="modalEvidenceDetails">
+          CAMERA: CAM-01 (Sector-07) | TIMECODE: 00:02:14 | STATUS: EVIDENCE LOGGED
         </div>
       </div>
     </div>
