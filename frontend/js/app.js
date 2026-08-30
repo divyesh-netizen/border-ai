@@ -79,7 +79,25 @@ function resizeCanvas() {
   }
 }
 
+function resetTelemetryCounters() {
+  const ids = ["cardActiveTracks", "cardVisibleHumans", "cardUniqueHumans", "cardUniqueVehicles", "cardUniqueAnimals", "cardTotalDetections", "hudUniqueHumansVal", "hudActiveTracksVal"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = "0";
+  });
+  const list = document.getElementById("liveDetectionsList");
+  if (list) list.innerHTML = `<div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">Initializing Video Analysis...</div>`;
+}
+
 function loadSampleVideo(type) {
+  stopAnalysis();
+  currentJobId = null;
+  lastLiveDetections = [];
+  if (hudCtx && hudCanvas) {
+    hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+  }
+  resetTelemetryCounters();
+
   document.querySelectorAll(".btn-source").forEach(b => b.classList.remove("active"));
   if (type === "user") {
     currentVideoFilename = "whatsapp_surveillance.mp4";
@@ -111,6 +129,14 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  stopAnalysis();
+  currentJobId = null;
+  lastLiveDetections = [];
+  if (hudCtx && hudCanvas) {
+    hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+  }
+  resetTelemetryCounters();
+
   if (mainVideo) {
     mainVideo.src = URL.createObjectURL(file);
     mainVideo.load();
@@ -121,6 +147,9 @@ async function handleFileUpload(event) {
   formData.append("file", file);
 
   try {
+    const btnText = document.getElementById("btnRunAnalysisText");
+    if (btnText) btnText.innerText = "UPLOADING...";
+
     const res = await fetch("/api/upload-video", {
       method: "POST",
       body: formData
@@ -129,7 +158,7 @@ async function handleFileUpload(event) {
     if (res.ok) {
       currentVideoFilename = data.filename;
       console.log("[Upload] Video uploaded successfully:", data.filename);
-      // Auto-start instant analysis immediately
+      // Auto-start instant analysis immediately for uploaded video
       startAnalysis();
     }
   } catch (err) {
@@ -214,6 +243,7 @@ async function startAnalysis() {
 function stopAnalysis() {
   isAnalysisRunning = false;
   clearInterval(pollingInterval);
+  pollingInterval = null;
   const btn = document.getElementById("btnRunAnalysis");
   const btnText = document.getElementById("btnRunAnalysisText");
   if (btn) btn.classList.remove("running");
@@ -272,12 +302,21 @@ function updateTelemetryDisplay(data) {
   const cardUniqAnim = document.getElementById("cardUniqueAnimals");
   const cardTotDet = document.getElementById("cardTotalDetections");
 
-  if (cardActTrk) cardActTrk.innerText = active.total || 0;
-  if (cardVisHum) cardVisHum.innerText = visible.humans || 0;
-  if (cardUniqHum) cardUniqHum.innerText = uniq.humans || 0;
-  if (cardUniqVeh) cardUniqVeh.innerText = uniq.vehicles || 0;
-  if (cardUniqAnim) cardUniqAnim.innerText = uniq.animals || 0;
-  if (cardTotDet) cardTotDet.innerText = rawCount;
+  if (isPersonOnlyMode) {
+    if (cardActTrk) cardActTrk.innerText = active.humans || 0;
+    if (cardVisHum) cardVisHum.innerText = visible.humans || 0;
+    if (cardUniqHum) cardUniqHum.innerText = uniq.humans || 0;
+    if (cardUniqVeh) cardUniqVeh.innerText = "0";
+    if (cardUniqAnim) cardUniqAnim.innerText = "0";
+    if (cardTotDet) cardTotDet.innerText = visible.humans || 0;
+  } else {
+    if (cardActTrk) cardActTrk.innerText = active.total || 0;
+    if (cardVisHum) cardVisHum.innerText = visible.humans || 0;
+    if (cardUniqHum) cardUniqHum.innerText = uniq.humans || 0;
+    if (cardUniqVeh) cardUniqVeh.innerText = uniq.vehicles || 0;
+    if (cardUniqAnim) cardUniqAnim.innerText = uniq.animals || 0;
+    if (cardTotDet) cardTotDet.innerText = rawCount;
+  }
 
   // HUD Bottom Bar
   const hudFps = document.getElementById("hudFps");
@@ -285,7 +324,7 @@ function updateTelemetryDisplay(data) {
   const hudActT = document.getElementById("hudActiveTracksVal");
   if (hudFps && data.fps) hudFps.innerText = data.fps;
   if (hudUniqH) hudUniqH.innerText = uniq.humans || 0;
-  if (hudActT) hudActT.innerText = active.total || 0;
+  if (hudActT) hudActT.innerText = isPersonOnlyMode ? (active.humans || 0) : (active.total || 0);
 
   // Quality Report Badge
   if (data.quality_report) {

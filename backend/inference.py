@@ -111,6 +111,7 @@ class ModelAdapter:
         inference_mode: str = "BALANCED" # HIGH_PRECISION, BALANCED, HIGH_RECALL
     ):
         self.model_path = model_path
+        self.weights_path = model_path or "yolov8n.pt"
         self.iou_threshold = iou_threshold
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = None
