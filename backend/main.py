@@ -111,23 +111,56 @@ async def update_model_config(
 
 @app.post("/api/upload-video")
 async def upload_video(file: UploadFile = File(...)):
+    print(f"[UPLOAD_START] filename={file.filename} content_type={file.content_type}")
     raw_name = os.path.basename(file.filename) if file.filename else "video.mp4"
     safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in raw_name)
     ext = os.path.splitext(safe_name)[1].lower()
     if ext not in [".mp4", ".avi", ".mov", ".webm", ".mkv"]:
-        raise HTTPException(status_code=400, detail="Unsupported video format. Allowed: MP4, AVI, MOV, WEBM, MKV.")
-    
+        print(f"[UPLOAD_FAILED] Unsupported extension: {ext}")
+        raise HTTPException(status_code=400, detail=f"Unsupported video format '{ext}'. Allowed: MP4, AVI, MOV, WEBM, MKV.")
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     dest_path = os.path.join(UPLOAD_DIR, safe_name)
-    with open(dest_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
+
+    try:
+        with open(dest_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        print(f"[UPLOAD_FAILED] Could not write file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {str(e)}")
+
+    file_size = os.path.getsize(dest_path)
+    print(f"[UPLOAD_SUCCESS] saved={safe_name} size={file_size} bytes path={dest_path}")
+
+    # Extract video metadata
+    import cv2
+    cap = cv2.VideoCapture(dest_path)
+    if cap.isOpened():
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = float(cap.get(cv2.CAP_PROP_FPS))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        duration = round(total_frames / fps, 2) if fps > 0 else 0.0
+        cap.release()
+        print(f"[VIDEO_OPEN] {safe_name} frames={total_frames} fps={fps:.1f} size={width}x{height} duration={duration}s")
+    else:
+        total_frames, fps, width, height, duration = 0, 0.0, 0, 0, 0.0
+        cap.release()
+        print(f"[VIDEO_OPEN_FAILED] Could not open {safe_name} with OpenCV after upload")
+
     return {
+        "success": True,
         "message": "Video uploaded successfully",
         "filename": safe_name,
         "video_url": f"/uploads/{safe_name}",
-        "file_size": os.path.getsize(dest_path)
+        "file_size": file_size,
+        "duration": duration,
+        "fps": fps,
+        "width": width,
+        "height": height,
+        "total_frames": total_frames
     }
+
 
 @app.get("/api/sample-videos")
 async def get_sample_videos():
@@ -157,9 +190,16 @@ async def analyze_video(
     is_person_only: bool = Form(False),
     conf_threshold: Optional[float] = Form(None)
 ):
+    print(f"[ANALYSIS_START] video_filename='{video_filename}' mode={mode} person_only={is_person_only} conf={conf_threshold}")
     video_path = os.path.join(UPLOAD_DIR, video_filename)
+
     if not os.path.exists(video_path):
-        raise HTTPException(status_code=404, detail=f"Video file '{video_filename}' not found in uploads.")
+        available = [f for f in os.listdir(UPLOAD_DIR) if f.endswith(('.mp4','.avi','.mov','.mkv','.webm'))]
+        print(f"[VIDEO_OPEN_FAILED] '{video_filename}' not found. Upload dir contains: {available}")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Video file '{video_filename}' not found. Available: {available[:5]}"
+        )
 
     # Apply confidence threshold if provided
     if conf_threshold is not None:
@@ -168,6 +208,7 @@ async def analyze_video(
         model_adapter.thresholds["VEHICLE_THRESHOLD"] = ct
         model_adapter.thresholds["ANIMAL_THRESHOLD"] = ct
         model_adapter.conf_threshold = ct
+        print(f"[MODEL_CONFIG] confidence threshold set to {ct}")
 
     job_id = video_processor.start_processing(
         video_path=video_path,
@@ -175,6 +216,7 @@ async def analyze_video(
         mode_override=mode,
         is_person_only=is_person_only
     )
+    print(f"[ANALYSIS_START] job_id={job_id} video={video_filename}")
     return {
         "job_id": job_id,
         "status": "PROCESSING",

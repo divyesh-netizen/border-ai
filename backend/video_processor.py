@@ -139,7 +139,7 @@ class VideoProcessor:
         job.status = "PROCESSING"
 
         is_high_accuracy = (job.mode_override == "HIGH_ACCURACY")
-        min_hits = 4 if is_high_accuracy else 2
+        min_hits = 5 if is_high_accuracy else 3   # 3 frames for REAL_TIME validation
         use_tiled = is_high_accuracy and (w >= 720 or h >= 540)
 
         tracker = ByteTracker(
@@ -150,13 +150,9 @@ class VideoProcessor:
         )
         alert_engine = AlertEngine(loiter_time_sec=8.0, crowd_threshold=4)
 
-        # Adaptive frame step: skip frames for very long videos to maintain latency
-        if total_frames > 1000:
-            step = 3
-        elif total_frames > 400:
-            step = 2
-        else:
-            step = 1
+        # Adaptive frame step — process every frame for the first 100 frames,
+        # then skip to keep latency manageable on CPU.
+        step = 1  # Always process every frame — detection must appear immediately
 
         frame_idx = 0
         processed_frames = 0
@@ -173,7 +169,17 @@ class VideoProcessor:
                 break
 
             frame_idx += 1
-            if frame_idx % step != 0 and frame_idx != total_frames:
+            # Fast ramp-up: process every frame for first 90 frames, then switch to skip
+            if frame_idx <= 90:
+                current_step = 1
+            elif total_frames > 1000:
+                current_step = 3
+            elif total_frames > 400:
+                current_step = 2
+            else:
+                current_step = 1
+
+            if frame_idx % current_step != 0 and frame_idx != total_frames:
                 continue
 
             processed_frames += 1
@@ -195,6 +201,15 @@ class VideoProcessor:
                 quality_info=job.quality_report,
                 person_only=job.is_person_only,
             )
+
+            # Log first frame details
+            if processed_frames == 1:
+                print(f"[FIRST_FRAME] job={job.job_id} frame={frame_idx} size={w}x{h} fps={fps:.1f} device={self.model_adapter.device}")
+                print(f"[FIRST_FRAME] raw_detections={len(detections)} model={self.model_adapter.model_info.get('model_name')}")
+                for d in detections[:5]:
+                    print(f"  [{d['class']}] conf={d['confidence']}% bbox={d['bbox']} src={d.get('source','?')}")
+                if not detections:
+                    print(f"[FIRST_FRAME] WARNING: No detections on first frame. Check conf thresholds and video content.")
 
             # Measure latency and FPS
             infer_ms = round((time.time() - t_frame_start) * 1000, 1)

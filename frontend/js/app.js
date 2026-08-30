@@ -151,7 +151,7 @@ function loadSampleVideo(type) {
 
   document.querySelectorAll(".btn-source").forEach(b => b.classList.remove("active"));
   if (type === "user") {
-    currentVideoFilename = "whatsapp_surveillance.mp4";
+    currentVideoFilename = "sample_cctv_night.mp4";  // Has real people visible by default
     document.getElementById("srcBtnUser")?.classList.add("active");
   } else if (type === "visible") {
     currentVideoFilename = "sample_cctv_night.mp4";
@@ -189,9 +189,10 @@ async function handleFileUpload(event) {
   resetTelemetryCounters();
   updateAppState("UPLOADING");
 
-  // Show local preview immediately
+  // Show LOCAL preview immediately so user sees video while upload happens
+  const localBlobUrl = URL.createObjectURL(file);
   if (mainVideo) {
-    mainVideo.src = URL.createObjectURL(file);
+    mainVideo.src = localBlobUrl;
     mainVideo.load();
     mainVideo.play().catch(() => {});
   }
@@ -205,18 +206,40 @@ async function handleFileUpload(event) {
       body: formData
     });
     const data = await res.json();
-    if (res.ok) {
+
+    if (res.ok && data.success) {
       currentVideoFilename = data.filename;
-      console.log("[Upload] Video uploaded:", data.filename);
+      console.log(`[Upload] SUCCESS: local='${file.name}' server='${data.filename}' url='${data.video_url}'`);
+      console.log(`[Upload] Video metadata: ${data.duration}s, ${data.fps}fps, ${data.width}x${data.height}`);
+
+      // CRITICAL: Switch video player to the server URL so it matches what backend will analyze.
+      // The blob URL and the server path are the same video but we need the server path for analyze.
+      if (mainVideo && data.video_url) {
+        const currentTime = mainVideo.currentTime;
+        mainVideo.src = data.video_url;
+        mainVideo.load();
+        mainVideo.currentTime = currentTime;
+        mainVideo.play().catch(() => {});
+      }
+
+      // Update HUD cam tag with uploaded filename
+      const hudCamTag = document.getElementById("hudCamTag");
+      if (hudCamTag) hudCamTag.innerText = `UPLOADED: ${data.filename} (${data.width}x${data.height} @ ${Math.round(data.fps)}fps)`;
+
       // VIDEO_READY — no auto-start. User must click ANALYZE VIDEO.
       updateAppState("VIDEO_READY");
     } else {
-      console.error("[Upload] Server error:", data);
+      const errMsg = data.detail || data.message || "Unknown upload error";
+      console.error("[Upload] Server error:", errMsg, data);
       updateAppState("ERROR");
+      const statusBadge = document.getElementById("hudStatusBadge");
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>UPLOAD FAILED: ${errMsg}</span>`;
     }
   } catch (err) {
     console.error("[Upload] Network error:", err);
     updateAppState("ERROR");
+    const statusBadge = document.getElementById("hudStatusBadge");
+    if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>UPLOAD FAILED: Network error</span>`;
   }
 }
 
@@ -260,7 +283,7 @@ async function toggleAnalysis() {
 
 async function startAnalysis() {
   if (!currentVideoFilename) {
-    console.warn("[Analysis] No video filename set.");
+    console.warn("[Analysis] No video filename set. Upload a video first.");
     return;
   }
 
@@ -273,10 +296,12 @@ async function startAnalysis() {
   const confSelect = document.getElementById("selectConfThreshold");
   const confThreshold = confSelect ? parseFloat(confSelect.value) : 0.40;
 
+  console.log(`[Analysis] Starting analysis: filename='${currentVideoFilename}' mode='${currentMode}' personOnly=${isPersonOnlyMode} conf=${confThreshold}`);
+
   try {
     const formData = new FormData();
     formData.append("video_filename", currentVideoFilename);
-    formData.append("is_thermal", currentVideoFilename.includes("thermal"));
+    formData.append("is_thermal", currentVideoFilename.toLowerCase().includes("thermal"));
     formData.append("mode", currentMode);
     formData.append("is_person_only", isPersonOnlyMode);
     formData.append("conf_threshold", confThreshold);
@@ -286,6 +311,7 @@ async function startAnalysis() {
       body: formData
     });
     const data = await res.json();
+    console.log("[Analysis] API response:", data);
 
     if (res.ok) {
       currentJobId = data.job_id;
@@ -296,8 +322,11 @@ async function startAnalysis() {
       }
       startStatusPolling();
     } else {
-      console.error("[Analysis] Server error:", data);
+      const errMsg = data.detail || data.message || `HTTP ${res.status}`;
+      console.error("[Analysis] Server error:", errMsg, data);
       updateAppState("ERROR");
+      const statusBadge = document.getElementById("hudStatusBadge");
+      if (statusBadge) statusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>ANALYSIS ERROR: ${errMsg}</span>`;
     }
   } catch (err) {
     console.error("[Analysis] Failed to start:", err);
@@ -758,7 +787,10 @@ function renderLiveDetectionsList(detections) {
   if (badge) badge.innerText = `${filtered.length} DETECTIONS`;
 
   if (filtered.length === 0) {
-    list.innerHTML = `<div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">Perimeter Clear ${isPersonOnlyMode ? '(Person Filter Active)' : ''}</div>`;
+    const emptyMsg = isAnalysisRunning
+      ? `<div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--saffron-gov); padding: 0.5rem; animation: pulse 1.5s infinite;">INITIALIZING AI PIPELINE...</div>`
+      : `<div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); padding: 0.5rem;">PERIMETER CLEAR ${isPersonOnlyMode ? '(Person Filter Active)' : ''}</div>`;
+    list.innerHTML = emptyMsg;
     return;
   }
 
