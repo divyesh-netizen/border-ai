@@ -152,18 +152,25 @@ async def get_sample_videos():
 async def analyze_video(
     video_filename: str = Form(...),
     is_thermal: bool = Form(False),
-    mode: Optional[str] = Form("HIGH_ACCURACY") # HIGH_ACCURACY (Tiled SAHI) or REAL_TIME
+    mode: Optional[str] = Form("REAL_TIME"),
+    is_person_only: bool = Form(False)
 ):
     video_path = os.path.join(UPLOAD_DIR, video_filename)
     if not os.path.exists(video_path):
         raise HTTPException(status_code=404, detail=f"Video file '{video_filename}' not found in uploads.")
     
-    job_id = video_processor.start_processing(video_path=video_path, is_thermal=is_thermal, mode_override=mode)
+    job_id = video_processor.start_processing(
+        video_path=video_path,
+        is_thermal=is_thermal,
+        mode_override=mode,
+        is_person_only=is_person_only
+    )
     return {
         "job_id": job_id,
         "status": "PROCESSING",
         "video_filename": video_filename,
         "mode": mode,
+        "is_person_only": is_person_only,
         "message": "Computer vision video analytics pipeline initiated"
     }
 

@@ -214,6 +214,7 @@ async function startAnalysis() {
     formData.append("video_filename", currentVideoFilename);
     formData.append("is_thermal", currentVideoFilename.includes("thermal"));
     formData.append("mode", currentMode);
+    formData.append("is_person_only", isPersonOnlyMode);
 
     const res = await fetch("/api/analyze-video", {
       method: "POST",

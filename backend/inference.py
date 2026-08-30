@@ -195,6 +195,54 @@ class ModelAdapter:
         else:
             return "UNKNOWN", name_lower
 
+    def _predict_opencv_hog(self, frame: np.ndarray) -> List[Dict[str, Any]]:
+        """
+        OpenCV HOG People Detector Fallback.
+        Activates seamlessly if YOLO model is unavailable or throws an error.
+        """
+        h, w = frame.shape[:2]
+        detections = []
+        try:
+            if not hasattr(self, "hog") or self.hog is None:
+                self.hog = cv2.HOGDescriptor()
+                self.hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+            
+            scale_w = min(1.0, 640.0 / w)
+            proc = cv2.resize(frame, (0, 0), fx=scale_w, fy=scale_w) if scale_w < 1.0 else frame
+            
+            rects, weights = self.hog.detectMultiScale(
+                proc,
+                winStride=(8, 8),
+                padding=(8, 8),
+                scale=1.05
+            )
+            
+            inv_scale = 1.0 / scale_w
+            for i, rect in enumerate(rects):
+                rx, ry, rw, rh = rect
+                x1 = max(0, min(w, int(rx * inv_scale)))
+                y1 = max(0, min(h, int(ry * inv_scale)))
+                x2 = max(0, min(w, int((rx + rw) * inv_scale)))
+                y2 = max(0, min(h, int((ry + rh) * inv_scale)))
+                
+                weight = float(weights[i]) if (weights is not None and i < len(weights)) else 0.5
+                conf = min(95.0, max(40.0, round(weight * 100, 1)))
+                
+                norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round((x2 - x1) / w, 4), round((y2 - y1) / h, 4)]
+                detections.append({
+                    "class": "HUMAN",
+                    "sub_type": "person (opencv hog)",
+                    "raw_class": "person",
+                    "confidence": conf,
+                    "bbox": [x1, y1, x2, y2],
+                    "norm_bbox": norm_bbox,
+                    "color": CLASS_COLORS["HUMAN"],
+                    "source": "OPENCV_HOG_FALLBACK"
+                })
+        except Exception as e:
+            print(f"[ModelAdapter] OpenCV HOG fallback error: {e}")
+        return detections
+
     def predict(
         self,
         frame: np.ndarray,
@@ -206,15 +254,19 @@ class ModelAdapter:
         """
         Runs instant object detection on video frame.
         Fast mode bypasses expensive image enhancement to provide immediate sub-30ms inference.
+        Falls back to OpenCV HOG detector if YOLO fails.
         """
-        if frame is None or frame.size == 0 or self.model is None:
+        if frame is None or frame.size == 0:
             return []
+
+        if self.model is None:
+            return self._predict_opencv_hog(frame)
 
         h, w = frame.shape[:2]
         all_raw_detections = []
         is_high_accuracy = (mode_override == "HIGH_ACCURACY")
 
-        # 1. Image Preprocessing (Only in High Accuracy mode or when severely dark)
+        # 1. Image Preprocessing (Only in High Accuracy mode)
         if is_high_accuracy:
             proc_frame = VideoQualityAnalyzer.preprocess_frame(
                 frame=frame,
@@ -229,7 +281,7 @@ class ModelAdapter:
             imgsz = 640
 
         try:
-            # 2. Fast Direct Frame Inference (Base threshold 0.25 to prevent premature YOLO drop)
+            # 2. Fast Direct Frame Inference
             full_results = self.model.predict(
                 source=proc_frame,
                 conf=0.25,
@@ -279,7 +331,7 @@ class ModelAdapter:
                         "source": "FULL_FRAME"
                     })
 
-            # 3. Tiled Inference for Small / Distant Pedestrians (High Accuracy Mode)
+            # 3. Tiled Inference for Small / Distant Pedestrians (Only if requested in High Accuracy Mode)
             if use_tiled and (w >= 720 or h >= 540):
                 slices = self._slice_frame(proc_frame)
                 for s in slices:
@@ -289,7 +341,7 @@ class ModelAdapter:
 
                     tile_results = self.model.predict(
                         source=crop,
-                        conf=min_thresh,
+                        conf=0.25,
                         iou=self.iou_threshold,
                         device=self.device,
                         verbose=False,
@@ -313,10 +365,12 @@ class ModelAdapter:
                             x2 = max(0, min(w, int(t_xyxy[2] + x_off)))
                             y2 = max(0, min(h, int(t_xyxy[3] + y_off)))
 
-                            if (x2 - x1) < 6 or (y2 - y1) < 6:
+                            bw = x2 - x1
+                            bh = y2 - y1
+                            if bw < 8 or bh < 12:
                                 continue
 
-                            norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round((x2 - x1) / w, 4), round((y2 - y1) / h, 4)]
+                            norm_bbox = [round(x1 / w, 4), round(y1 / h, 4), round(bw / w, 4), round(bh / h, 4)]
                             all_raw_detections.append({
                                 "class": canonical_class,
                                 "sub_type": sub_type,
@@ -325,16 +379,18 @@ class ModelAdapter:
                                 "bbox": [x1, y1, x2, y2],
                                 "norm_bbox": norm_bbox,
                                 "color": CLASS_COLORS.get(canonical_class, CLASS_COLORS["UNKNOWN"]),
-                                "source": "TILED_SAHI"
+                                "source": "TILED_SLICE"
                             })
 
-            # 4. Global Class-Aware NMS Fusion
-            final_detections = apply_global_nms(all_raw_detections, iou_threshold=self.iou_threshold)
-            return final_detections
+            # Apply global NMS fusion
+            if len(all_raw_detections) > 1:
+                return apply_global_nms(all_raw_detections, iou_threshold=self.iou_threshold)
+            return all_raw_detections
 
         except Exception as e:
-            print(f"[ModelAdapter] Prediction error: {e}")
-            return []
+            print(f"[ModelAdapter] YOLO inference exception ({e}), falling back to OpenCV HOG detector...")
+            self.model_info["status"] = "OPENCV_HOG_FALLBACK"
+            return self._predict_opencv_hog(frame)
 
     def get_model_info(self) -> Dict[str, Any]:
         return dict(self.model_info)

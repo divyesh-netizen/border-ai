@@ -18,11 +18,12 @@ except ImportError:
     from video_quality import VideoQualityAnalyzer
 
 class VideoProcessingJob:
-    def __init__(self, job_id: str, video_path: str, is_thermal: bool = False, mode_override: Optional[str] = None):
+    def __init__(self, job_id: str, video_path: str, is_thermal: bool = False, mode_override: Optional[str] = None, is_person_only: bool = False):
         self.job_id = job_id
         self.video_path = video_path
         self.is_thermal = is_thermal
         self.mode_override = mode_override or "REAL_TIME" # REAL_TIME (Default) or HIGH_ACCURACY
+        self.is_person_only = is_person_only
         self.status = "INITIALIZING"
         self.progress_percent = 0
         self.current_frame = 0
@@ -58,29 +59,14 @@ class VideoProcessingJob:
         self.unique_unknown = 0
         self.total_unique_objects = 0
         
-        # Quality Analysis
-        self.quality_report = {
-            "blur_score": 0.0,
-            "brightness_lux": 0.0,
-            "contrast_ratio": 0.0,
-            "noise_level": 0.0,
-            "modality": "VISIBLE_RGB",
-            "quality_label": "ANALYZING",
-            "resolution": "0x0"
-        }
-        
+        # Risk & Behavioral Events
+        self.risk_data = {}
         self.alerts_count = 0
-        self.events_count = 0
-        
-        self.risk_data = {
-            "score": 0,
-            "level": "LOW",
-            "factors": ["Perimeter monitoring initiated"]
-        }
-        
         self.alerts_list: List[Dict[str, Any]] = []
         self.events_list: List[Dict[str, Any]] = []
-        self.unique_identities_gallery: List[Dict[str, Any]] = []
+        self.events_summary = []
+        self.unique_identities_gallery = []
+        self.quality_report = None
         
         self.annotated_video_path: Optional[str] = None
         self.annotated_video_url: Optional[str] = None
@@ -100,9 +86,9 @@ class VideoProcessor:
         self.jobs: Dict[str, VideoProcessingJob] = {}
         self.lock = threading.Lock()
 
-    def start_processing(self, video_path: str, is_thermal: bool = False, mode_override: Optional[str] = None) -> str:
+    def start_processing(self, video_path: str, is_thermal: bool = False, mode_override: Optional[str] = None, is_person_only: bool = False) -> str:
         job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
-        job = VideoProcessingJob(job_id, video_path, is_thermal=is_thermal, mode_override=mode_override)
+        job = VideoProcessingJob(job_id, video_path, is_thermal=is_thermal, mode_override=mode_override, is_person_only=is_person_only)
         
         with self.lock:
             self.jobs[job_id] = job
@@ -198,7 +184,11 @@ class VideoProcessor:
             job.latency_ms = infer_ms
             job.measured_fps = measured_fps
 
-            # 3. Update Multi-Object Tracker (Kalman Filter + Temporal Validation + Thumbnails)
+            # 3. Filter Person Only before tracker if requested
+            if job.is_person_only:
+                detections = [d for d in detections if d["class"] == "HUMAN"]
+
+            # 4. Update Multi-Object Tracker (Kalman Filter + Temporal Validation + Thumbnails)
             tracked_dets = tracker.update(
                 detections=detections,
                 frame_idx=frame_idx,
