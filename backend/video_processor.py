@@ -31,6 +31,8 @@ class VideoProcessingJob:
         self.duration_sec = 0.0
         self.start_time = time.time()
         self.error_message = None
+        self.latency_ms = 0.0
+        self.measured_fps = 0.0
         
         # Real-time Telemetry
         self.live_detections = []
@@ -159,9 +161,9 @@ class VideoProcessor:
         else:
             step = 1
 
-        # Frame Processing Loop (Streaming Instant Detections)
-
+        t_start = time.time()
         while cap.isOpened():
+            t_frame_start = time.time()
             ret, frame = cap.read()
             if not ret:
                 break
@@ -173,11 +175,14 @@ class VideoProcessor:
             processed_frames += 1
             timestamp = round(frame_idx / fps, 2)
 
-            # 1. Update Video Quality every 30 frames
-            if frame_idx % 30 == 1:
-                job.quality_report = VideoQualityAnalyzer.analyze_frame(frame)
+            # 1. Non-blocking background quality update (every 60 frames)
+            if frame_idx % 60 == 1:
+                try:
+                    job.quality_report = VideoQualityAnalyzer.analyze_frame(frame)
+                except Exception:
+                    pass
 
-            # 2. Run High-Precision Multi-Scale / Tiled Object Detection
+            # 2. Fast Streaming Object Detection (Zero Preprocessing in Fast Mode)
             detections = self.model_adapter.predict(
                 frame=frame,
                 is_thermal=job.is_thermal,
@@ -185,6 +190,13 @@ class VideoProcessor:
                 use_tiled=use_tiled,
                 quality_info=job.quality_report
             )
+
+            # Calculate actual measured latency and FPS
+            infer_ms = round((time.time() - t_frame_start) * 1000, 1)
+            elapsed = max(0.01, time.time() - t_start)
+            measured_fps = round(processed_frames / elapsed, 1)
+            job.latency_ms = infer_ms
+            job.measured_fps = measured_fps
 
             # 3. Update Multi-Object Tracker (Kalman Filter + Temporal Validation + Thumbnails)
             tracked_dets = tracker.update(

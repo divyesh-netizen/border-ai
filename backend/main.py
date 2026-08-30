@@ -181,6 +181,8 @@ async def get_analysis_status(job_id: str):
         "current_frame": job.current_frame,
         "total_frames": job.total_frames,
         "fps": job.fps,
+        "measured_fps": job.measured_fps or job.fps,
+        "latency_ms": job.latency_ms,
         "duration_sec": job.duration_sec,
         "live_detections": job.live_detections,
         "quality_report": job.quality_report,

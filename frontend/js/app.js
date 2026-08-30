@@ -284,7 +284,7 @@ function startStatusPolling() {
     } catch (err) {
       console.error("Polling error:", err);
     }
-  }, 300);
+  }, 80);
 }
 
 function updateTelemetryDisplay(data) {
@@ -293,6 +293,16 @@ function updateTelemetryDisplay(data) {
   const visible = stats.current_visible || {};
   const active = stats.active_tracks || {};
   const rawCount = stats.total_raw_detections || 0;
+
+  // Update Status Badge on HUD
+  const hudStatusBadge = document.getElementById("hudStatusBadge");
+  if (hudStatusBadge) {
+    if (data.current_frame > 0) {
+      hudStatusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>AI DETECTION ACTIVE</span>`;
+    } else {
+      hudStatusBadge.innerHTML = `<span class="status-pulsing-dot"></span><span>STARTING AI PIPELINE...</span>`;
+    }
+  }
 
   // 1. Top Telemetry Counters
   const cardActTrk = document.getElementById("cardActiveTracks");
@@ -318,11 +328,15 @@ function updateTelemetryDisplay(data) {
     if (cardTotDet) cardTotDet.innerText = rawCount;
   }
 
-  // HUD Bottom Bar
+  // HUD Bottom Bar (Live measured FPS and Latency)
   const hudFps = document.getElementById("hudFps");
   const hudUniqH = document.getElementById("hudUniqueHumansVal");
   const hudActT = document.getElementById("hudActiveTracksVal");
-  if (hudFps && data.fps) hudFps.innerText = data.fps;
+  if (hudFps) {
+    const fpsVal = data.measured_fps || data.fps || 25.0;
+    const latStr = data.latency_ms ? ` (${data.latency_ms}ms)` : '';
+    hudFps.innerText = `${fpsVal}${latStr}`;
+  }
   if (hudUniqH) hudUniqH.innerText = uniq.humans || 0;
   if (hudActT) hudActT.innerText = isPersonOnlyMode ? (active.humans || 0) : (active.total || 0);
 
