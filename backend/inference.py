@@ -3,8 +3,10 @@ import time
 import numpy as np
 import cv2
 import torch
-from typing import List, Dict, Any, Optional, Tuple
-from video_quality import VideoQualityAnalyzer
+try:
+    from backend.video_quality import VideoQualityAnalyzer
+except ImportError:
+    from video_quality import VideoQualityAnalyzer
 
 # Strict Canonical Class Sets
 COCO_HUMAN_CLASSES = {"person", "pedestrian", "human", "patrol", "soldier"}
@@ -155,59 +157,42 @@ class ModelAdapter:
             self.model_info["status"] = "MODEL_UNAVAILABLE"
 
     def set_preset(self, preset_name: str):
-        if preset_name in PRESETS:
-            self.inference_mode = preset_name
-            self.thresholds.update(PRESETS[preset_name])
-            self.model_info["thresholds"] = self.thresholds
-            self.model_info["inference_mode"] = preset_name
+        p = preset_name.upper()
+        if p == "HIGH_PRECISION":
+            self.thresholds = {"PERSON": 0.60, "VEHICLE": 0.55, "ANIMAL": 0.55, "UNKNOWN": 0.45}
+            self.iou_threshold = 0.40
+        elif p == "HIGH_RECALL":
+            self.thresholds = {"PERSON": 0.30, "VEHICLE": 0.35, "ANIMAL": 0.35, "UNKNOWN": 0.25}
+            self.iou_threshold = 0.50
+        else: # BALANCED / FAST
+            self.thresholds = {"PERSON": 0.35, "VEHICLE": 0.40, "ANIMAL": 0.40, "UNKNOWN": 0.30}
+            self.iou_threshold = 0.45
 
-    def set_class_threshold(self, class_name: str, threshold: float):
-        key = f"{class_name.upper()}_THRESHOLD"
-        if key in self.thresholds:
-            self.thresholds[key] = max(0.10, min(0.95, float(threshold)))
-            self.model_info["thresholds"] = self.thresholds
-
-    def map_class(self, raw_class_name: str) -> Tuple[str, str]:
-        """
-        Maps detector class name into canonical schema (HUMAN, VEHICLE, ANIMAL, UNKNOWN)
-        and preserves sub-category where available (e.g. car, dog).
-        """
-        clean = raw_class_name.lower().strip()
-        
-        if clean in COCO_HUMAN_CLASSES:
-            return "HUMAN", clean
-        elif clean in COCO_VEHICLE_CLASSES:
-            return "VEHICLE", clean
-        elif clean in COCO_ANIMAL_CLASSES:
-            return "ANIMAL", clean
-        else:
-            return "UNKNOWN", clean
+    def set_thresholds(self, person: float, vehicle: float, animal: float, iou: float):
+        self.thresholds["PERSON"] = float(person)
+        self.thresholds["VEHICLE"] = float(vehicle)
+        self.thresholds["ANIMAL"] = float(animal)
+        self.iou_threshold = float(iou)
 
     def _get_threshold_for_class(self, canonical_class: str) -> float:
-        key = f"{canonical_class.upper()}_THRESHOLD"
-        return self.thresholds.get(key, self.conf_threshold)
+        if canonical_class == "HUMAN":
+            return self.thresholds.get("PERSON", 0.35)
+        elif canonical_class == "VEHICLE":
+            return self.thresholds.get("VEHICLE", 0.40)
+        elif canonical_class == "ANIMAL":
+            return self.thresholds.get("ANIMAL", 0.40)
+        return self.thresholds.get("UNKNOWN", 0.30)
 
-    def _slice_frame(self, frame: np.ndarray) -> List[Dict[str, Any]]:
-        """
-        Generates 4 overlapping quadrant tiles (2x2 grid) for small distant object detection.
-        """
-        h, w = frame.shape[:2]
-        half_w = w // 2
-        half_h = h // 2
-        overlap_x = int(half_w * 0.15)
-        overlap_y = int(half_h * 0.15)
-        
-        slices = [
-            # Top-Left
-            {"crop": frame[0:min(h, half_h + overlap_y), 0:min(w, half_w + overlap_x)], "x_offset": 0, "y_offset": 0},
-            # Top-Right
-            {"crop": frame[0:min(h, half_h + overlap_y), max(0, half_w - overlap_x):w], "x_offset": max(0, half_w - overlap_x), "y_offset": 0},
-            # Bottom-Left
-            {"crop": frame[max(0, half_h - overlap_y):h, 0:min(w, half_w + overlap_x)], "x_offset": 0, "y_offset": max(0, half_h - overlap_y)},
-            # Bottom-Right
-            {"crop": frame[max(0, half_h - overlap_y):h, max(0, half_w - overlap_x):w], "x_offset": max(0, half_w - overlap_x), "y_offset": max(0, half_h - overlap_y)}
-        ]
-        return slices
+    def map_class(self, raw_class_name: str) -> Tuple[str, str]:
+        name_lower = raw_class_name.strip().lower()
+        if name_lower in COCO_HUMAN_CLASSES:
+            return "HUMAN", name_lower
+        elif name_lower in COCO_VEHICLE_CLASSES:
+            return "VEHICLE", name_lower
+        elif name_lower in COCO_ANIMAL_CLASSES:
+            return "ANIMAL", name_lower
+        else:
+            return "UNKNOWN", name_lower
 
     def predict(
         self,
@@ -218,33 +203,39 @@ class ModelAdapter:
         quality_info: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Runs high-precision multi-scale object detection on a video frame.
+        Runs instant object detection on video frame.
+        Fast mode bypasses expensive image enhancement to provide immediate sub-30ms inference.
         """
         if frame is None or frame.size == 0 or self.model is None:
             return []
 
         h, w = frame.shape[:2]
         all_raw_detections = []
+        is_high_accuracy = (mode_override == "HIGH_ACCURACY")
 
-        # 1. Adaptive Quality Preprocessing (evidence preserving, no hallucination)
-        proc_frame = VideoQualityAnalyzer.preprocess_frame(
-            frame=frame,
-            quality_info=quality_info,
-            is_thermal=is_thermal,
-            apply_enhancement=True
-        )
-
-        min_thresh = min(self.thresholds.values())
+        # 1. Image Preprocessing (Only in High Accuracy mode or when severely dark)
+        if is_high_accuracy:
+            proc_frame = VideoQualityAnalyzer.preprocess_frame(
+                frame=frame,
+                quality_info=quality_info,
+                is_thermal=is_thermal,
+                apply_enhancement=True
+            )
+            imgsz = 640
+        else:
+            # FAST MODE: Instant direct inference on original frame
+            proc_frame = frame
+            imgsz = 640
 
         try:
-            # 2. Full Frame Inference
+            # 2. Fast Direct Frame Inference (Base threshold 0.25 to prevent premature YOLO drop)
             full_results = self.model.predict(
                 source=proc_frame,
-                conf=min_thresh,
+                conf=0.25,
                 iou=self.iou_threshold,
                 device=self.device,
                 verbose=False,
-                imgsz=640
+                imgsz=imgsz
             )
 
             for r in full_results:

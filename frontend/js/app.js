@@ -5,7 +5,7 @@
  */
 
 // Global State
-let currentMode = "HIGH_ACCURACY"; // 'HIGH_ACCURACY' or 'REAL_TIME'
+let currentMode = "REAL_TIME"; // 'REAL_TIME' (Fast Mode Default) or 'HIGH_ACCURACY'
 let currentVideoFilename = "whatsapp_surveillance.mp4";
 let currentJobId = null;
 let pollingInterval = null;
@@ -102,6 +102,9 @@ function loadSampleVideo(type) {
   if (hudCamTag) {
     hudCamTag.innerText = type === "thermal" ? "CAM-03 / SECTOR-08 (THERMAL LWIR)" : "CAM-01 / SECTOR-07 (ALPHA)";
   }
+
+  // Auto-start instant analysis
+  startAnalysis();
 }
 
 async function handleFileUpload(event) {
@@ -126,6 +129,8 @@ async function handleFileUpload(event) {
     if (res.ok) {
       currentVideoFilename = data.filename;
       console.log("[Upload] Video uploaded successfully:", data.filename);
+      // Auto-start instant analysis immediately
+      startAnalysis();
     }
   } catch (err) {
     console.error("Upload error:", err);

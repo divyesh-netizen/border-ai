@@ -6,17 +6,23 @@ import threading
 import numpy as np
 from typing import Dict, Any, Optional, List
 
-from inference import ModelAdapter
-from tracker import ByteTracker
-from alert_engine import AlertEngine
-from video_quality import VideoQualityAnalyzer
+try:
+    from backend.inference import ModelAdapter
+    from backend.tracker import ByteTracker
+    from backend.alert_engine import AlertEngine
+    from backend.video_quality import VideoQualityAnalyzer
+except ImportError:
+    from inference import ModelAdapter
+    from tracker import ByteTracker
+    from alert_engine import AlertEngine
+    from video_quality import VideoQualityAnalyzer
 
 class VideoProcessingJob:
     def __init__(self, job_id: str, video_path: str, is_thermal: bool = False, mode_override: Optional[str] = None):
         self.job_id = job_id
         self.video_path = video_path
         self.is_thermal = is_thermal
-        self.mode_override = mode_override or "HIGH_ACCURACY" # REAL_TIME or HIGH_ACCURACY
+        self.mode_override = mode_override or "REAL_TIME" # REAL_TIME (Default) or HIGH_ACCURACY
         self.status = "INITIALIZING"
         self.progress_percent = 0
         self.current_frame = 0
@@ -24,6 +30,7 @@ class VideoProcessingJob:
         self.fps = 0.0
         self.duration_sec = 0.0
         self.start_time = time.time()
+        self.error_message = None
         
         # Real-time Telemetry
         self.live_detections = []
@@ -152,13 +159,7 @@ class VideoProcessor:
         else:
             step = 1
 
-        # Initial Video Quality Sample
-        ret, first_frame = cap.read()
-        if ret:
-            job.quality_report = VideoQualityAnalyzer.analyze_frame(first_frame)
-            if job.quality_report["modality"] == "THERMAL_LWIR":
-                job.is_thermal = True
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        # Frame Processing Loop (Streaming Instant Detections)
 
         while cap.isOpened():
             ret, frame = cap.read()
